@@ -1,11 +1,13 @@
 import * as vscode from "vscode";
-import * as fsPromise from "fs/promises";
-import * as path from "path";
-import { strict } from "assert";
 
+interface NoteFindDescription {
+    rootPath: vscode.Uri;
+    noteFilesPaths: Iterable<vscode.Uri>;
+}
 
 export default class NoteFinder {
-    private readonly _fileNameRegex = new RegExp(/^.*note.*(\.md|\.txt)$/gis);
+    private readonly noteFilenameRegex = new RegExp(/^.*note.*(\.md|\.txt)$/gis);
+    private readonly maxRecursionDepth = 20;
 
     private _paths: Iterable<vscode.Uri> = [];
 
@@ -18,40 +20,53 @@ export default class NoteFinder {
     }
 
     public findNotesDocs() {
-        // TODO: limit
 
-        const findInPath = async (filePath: vscode.Uri) => {
+        const findInPath = async (filePath: vscode.Uri, depth: number) => {
+            if (depth > this.maxRecursionDepth) {
+                return [];
+            }
+
+            // Ensure path are constant
+            if (filePath.path.endsWith('/')) {
+                filePath = filePath.with({
+                    path: filePath.path.slice(0, filePath.path.length - 1)
+                });
+            }
+
             const fileList: Array<vscode.Uri> = [];
-            const fileStat = await fsPromise.lstat(filePath.fsPath);
+            const fileStat = await vscode.workspace.fs.stat(filePath);
 
-            if (fileStat.isDirectory()) {
+            if (fileStat.type === vscode.FileType.Directory) {
                 // If the current path is a directory, recursively call findInPath for each subfile/directory
-                const dirFiles = await fsPromise.readdir(filePath.fsPath);
+                const dirFiles = await vscode.workspace.fs.readDirectory(filePath);
 
-                await Promise.all(dirFiles.map(async (subFilePath) => {
-                    const subPathUri = vscode.Uri.parse(`${filePath.scheme}://${filePath.path}/${subFilePath}`, true);
-                    fileList.push(...await findInPath(subPathUri));
+                await Promise.all(dirFiles.map(async (subPathDesc) => {
+                    const subFilePath = subPathDesc[0];
+                    const subPathUri = vscode.Uri.joinPath(filePath, subFilePath);
+
+                    fileList.push(...await findInPath(subPathUri, depth + 1));
                 }));
             } else {
-                // If the current path is a file, check its format.
+                // If the current path is a file, unknown or symlink, check its format.
                 const filePathParts = filePath.path.split('/');
                 const fileName = filePathParts[filePathParts.length - 1];
 
-                if (this._fileNameRegex.test(fileName)) {
+                if (this.noteFilenameRegex.test(fileName)) {
                     fileList.push(filePath);
-                    console.log(`Found file at ${filePath.fsPath}`);
+                    console.log(`Found note file at ${filePath.fsPath}`);
                 }
             }
 
             return fileList;
         };
 
-        Array.from(this._paths).forEach(async path => {
-            //const files = await fsPromise.readdir(path.fsPath);
-            const files = await findInPath(path);
-            console.log("All found files: ");
-            console.log(files);
-        });
+        return Promise.all(Array.from(this._paths).map(async path => {
+            const files = await findInPath(path, 0);
+            return {
+                rootPath: path,
+                noteFilesPaths: files,
+            } as NoteFindDescription;
+        }));
 
     }
 }
