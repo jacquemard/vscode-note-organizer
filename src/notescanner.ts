@@ -28,7 +28,7 @@ export default class NoteScanner {
         return this._paths;
     }
 
-    public findNotesDocs(progressDesc?: ProgressDesc) {
+    public scanNotesDocs(progressDesc?: ProgressDesc) {
         const [progress, token] = progressDesc || [null, null];
 
         token?.onCancellationRequested(() => {

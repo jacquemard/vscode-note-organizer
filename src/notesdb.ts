@@ -33,15 +33,24 @@ interface RawNote {
 
 
 export default class NotesDB {
+    private static _instance: NotesDB;
+
     public readonly storageKey = "notesDB";
 
     private _globalState: vscode.Memento;
-
     private _notesDB = new Map<vscode.Uri, Note>();
     // private _project: Array<Project> = [];
 
-    constructor(globalState: vscode.Memento) {
+    private constructor(globalState: vscode.Memento) {
         this._globalState = globalState;
+    }
+
+    public static getInstance(globalState: vscode.Memento) {
+        if (!this._instance) {
+            this._instance = new NotesDB(globalState);
+        }
+
+        return this._instance;
     }
 
     /**
@@ -71,6 +80,13 @@ export default class NotesDB {
     }
 
     /**
+     * Clear the database
+     */
+    public clearDB() {
+        this._notesDB = new Map<vscode.Uri, Note>();
+    }
+
+    /**
      * Adds the given noteURIs to the DB. Replace them if they already exist.
      * @param notesUris The note location uris.
      */
@@ -91,6 +107,12 @@ export default class NotesDB {
      * Load the DB from the persistant storage
      */
     public loadFromPersistantStorage() {
-        this._notesDB = this._globalState.get(this.storageKey, new Map()) as Map<vscode.Uri, Note>;
+        this.clearDB();
+
+        const persistantVal = this._globalState.get(this.storageKey);
+
+        if (persistantVal instanceof Map) {
+            this._notesDB = this._globalState.get(this.storageKey) as Map<vscode.Uri, Note> || new Map<vscode.Uri, Note>();
+        }
     }
 }

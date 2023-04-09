@@ -14,8 +14,12 @@
   "contributes": {
     "commands": [
       {
-        "command": "note-organizer.findNotes",
-        "title": "Find notes"
+        "command": "note-organizer.scanNotes",
+        "title": "Scan notes"
+      },
+      {
+        "command": "note-organizer.openNote",
+        "title": "Open note"
       }
     ]
   },
