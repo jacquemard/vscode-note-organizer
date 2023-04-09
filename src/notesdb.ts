@@ -38,7 +38,7 @@ export default class NotesDB {
     public readonly storageKey = "notesDB";
 
     private _globalState: vscode.Memento;
-    private _notesDB = new Map<vscode.Uri, Note>();
+    private _notesDB = new Map<string, Note>();
     // private _project: Array<Project> = [];
 
     private constructor(globalState: vscode.Memento) {
@@ -66,7 +66,7 @@ export default class NotesDB {
      * @returns The saved Note, if any
      */
     public getNoteFromUri(noteUri: vscode.Uri) {
-        return this._notesDB.get(noteUri);
+        return this._notesDB.get(noteUri.toString());
     }
 
     /**
@@ -74,7 +74,7 @@ export default class NotesDB {
      * @param noteUri The note location uri.
      */
     public addNoteToDBFromUri(noteUri: vscode.Uri) {
-        this._notesDB.set(noteUri, new Note(
+        this._notesDB.set(noteUri.toString(), new Note(
             noteUri
         ));
     }
@@ -83,7 +83,7 @@ export default class NotesDB {
      * Clear the database
      */
     public clearDB() {
-        this._notesDB = new Map<vscode.Uri, Note>();
+        this._notesDB = new Map<string, Note>();
     }
 
     /**
@@ -112,7 +112,7 @@ export default class NotesDB {
         const persistantVal = this._globalState.get(this.storageKey);
 
         if (persistantVal instanceof Map) {
-            this._notesDB = this._globalState.get(this.storageKey) as Map<vscode.Uri, Note> || new Map<vscode.Uri, Note>();
+            this._notesDB = this._globalState.get(this.storageKey) as Map<string, Note> || new Map<string, Note>();
         }
     }
 }

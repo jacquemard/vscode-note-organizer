@@ -28,6 +28,11 @@ export default class NoteScanner {
         return this._paths;
     }
 
+    /**
+     * Scan for note files
+     * @param progressDesc Used to report the progress to vscode
+     * @returns a promise with the found notes
+     */
     public scanNotesDocs(progressDesc?: ProgressDesc) {
         const [progress, token] = progressDesc || [null, null];
 

@@ -14,14 +14,16 @@
   "contributes": {
     "commands": [
       {
-        "command": "note-organizer.scanNotes",
-        "title": "Scan notes"
+        "command": "noteOrganizer.scanFolderForNotes",
+        "title": "Scan folder for notes",
+        "category": "Note Organizer"
       },
       {
-        "command": "note-organizer.openNote",
-        "title": "Open note"
+        "command": "noteOrganizer.openNote",
+        "title": "Open note",
+        "category": "Note Organizer"
       }
-    ]
+    ],
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

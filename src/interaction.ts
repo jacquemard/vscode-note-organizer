@@ -25,16 +25,34 @@ export async function openNoteDialog(context: vscode.ExtensionContext) {
 }
 
 
-
 export function openNote(note: Note) {
     vscode.window.showTextDocument(note.uri);
 }
 
 
-export async function scanAndSaveNotes(context: vscode.ExtensionContext) {
-    const uri = vscode.Uri.file("C:/Users/jacqu/OneDrive/Documents/Project");  // TODO from settings
+export async function scanFolderAndSaveNotes(context: vscode.ExtensionContext) {
+    let folders = await vscode.window.showOpenDialog({
+        canSelectFiles: false,
+        canSelectFolders: true,
+        canSelectMany: true,
+        openLabel: "Scan",
+        title: "Select folders to scan for notes"
+    });
 
-    const noteFinder = new NoteScanner([uri]);
+    folders = folders || [];
+
+    return await scanUrisAndSaveNotes(folders, context);
+}
+
+export async function scanUrisAndSaveNotes(uris: Array<vscode.Uri>, context: vscode.ExtensionContext) {
+    if (uris.length <= 0) {
+        vscode.window.showInformationMessage("No path to scan.");
+        return;
+    }
+
+    vscode.window.showInformationMessage(`Scanning paths ${uris} for notes files.`);
+
+    const noteFinder = new NoteScanner(uris);
 
     // Scan for notes
     const fileDescs = await vscode.window.withProgress({
@@ -44,8 +62,10 @@ export async function scanAndSaveNotes(context: vscode.ExtensionContext) {
 
     // Save them in DB
     const notesDB = NotesDB.getInstance(context.globalState);
-    notesDB.populateDBFromNoteUris(fileDescs.flatMap(fileDesc => fileDesc.noteFilesPaths));
+    const allFiles = fileDescs.flatMap(fileDesc => fileDesc.noteFilesPaths);
+    notesDB.populateDBFromNoteUris(allFiles);
 
     // Persist storage
     notesDB.persistDB();
+    vscode.window.showInformationMessage(`Note scanning finished successfully. Found ${allFiles.length} note files.`);
 }
