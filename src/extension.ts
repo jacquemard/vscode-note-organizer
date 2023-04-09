@@ -2,8 +2,8 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
-import NoteFinder from './notefinder';
-import NoteStorage from './notestorage';
+import NoteScanner from './notescanner';
+import NotesDB from './notesdb';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -17,19 +17,31 @@ export function activate(context: vscode.ExtensionContext) {
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
 	let findNotesdisposable = vscode.commands.registerCommand('note-organizer.findNotes', async () => {
-		const uri = vscode.Uri.file("C:/Users/jacqu/OneDrive/");
+		const uri = vscode.Uri.file("C:/Users/jacqu/OneDrive/Documents");
 
-		const noteFinder = new NoteFinder();
+		const noteFinder = new NoteScanner();
 		noteFinder.paths = [uri];
 
-		const fileDesc = await vscode.window.withProgress({
+		// Scan for notes
+		const fileDescs = await vscode.window.withProgress({
 			location: vscode.ProgressLocation.Window,
 			cancellable: true,
 		}, async (progress, token) => await noteFinder.findNotesDocs([progress, token]));
-		console.log(fileDesc);
+		console.log(fileDescs);
 
-		const noteStorage = new NoteStorage('main', context.globalStorageUri);
-		console.log(context.globalStorageUri);
+		// Save them in DB
+		const notesDB = new NotesDB(context.globalState);
+		notesDB.populateDBFromNoteUris(fileDescs.flatMap(fileDesc => fileDesc.noteFilesPaths));
+
+		// Persist storage
+		notesDB.persistDB();
+
+		const notesDB2 = new NotesDB(context.globalState);
+		notesDB2.loadFromPersistantStorage();
+
+		for (let note of notesDB2.getAllNotes()) {
+			console.log(note);
+		}
 	});
 
 	context.subscriptions.push(findNotesdisposable);

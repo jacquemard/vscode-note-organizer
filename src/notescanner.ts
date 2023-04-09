@@ -3,14 +3,22 @@ import { ProgressDesc } from "./utils";
 
 interface FoundNote {
     rootPath: vscode.Uri;
-    noteFilesPaths: Iterable<vscode.Uri>;
+    noteFilesPaths: Array<vscode.Uri>;
 }
 
-export default class NoteFinder {
+/**
+ * Scan directories looking for notes
+ */
+export default class NoteScanner {
+
     private readonly noteFilenameRegex = new RegExp(/^.*note.*(\.md|\.txt)$/gis);
     private readonly maxRecursionDepth = 20;
 
     private _paths: Iterable<vscode.Uri> = [];
+
+    public constructor(paths?: Iterable<vscode.Uri>) {
+        this.paths = paths || [];
+    }
 
     public set paths(paths: Iterable<vscode.Uri>) {
         this._paths = paths;
@@ -67,11 +75,11 @@ export default class NoteFinder {
             return fileList;
         };
 
-        return Promise.all(Array.from(this._paths).map(async path => {
-            progress?.report({
-                message: `Scanning notes...`
-            });
+        progress?.report({
+            message: `Scanning notes...`
+        });
 
+        return Promise.all(Array.from(this._paths).map(async path => {
             const files = await findInPath(path, 0);
             return {
                 rootPath: path,
