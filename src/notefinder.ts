@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
+import { ProgressDesc } from "./utils";
 
-interface NoteFindDescription {
+interface FoundNote {
     rootPath: vscode.Uri;
     noteFilesPaths: Iterable<vscode.Uri>;
 }
@@ -19,10 +20,15 @@ export default class NoteFinder {
         return this._paths;
     }
 
-    public findNotesDocs() {
+    public findNotesDocs(progressDesc?: ProgressDesc) {
+        const [progress, token] = progressDesc || [null, null];
+
+        token?.onCancellationRequested(() => {
+            console.log("User canceled searching notes");
+        });
 
         const findInPath = async (filePath: vscode.Uri, depth: number) => {
-            if (depth > this.maxRecursionDepth) {
+            if (depth > this.maxRecursionDepth || token?.isCancellationRequested) {
                 return [];
             }
 
@@ -54,6 +60,7 @@ export default class NoteFinder {
                 if (this.noteFilenameRegex.test(fileName)) {
                     fileList.push(filePath);
                     console.log(`Found note file at ${filePath.fsPath}`);
+                    progress?.report({ message: `Found note "${fileName}"` });
                 }
             }
 
@@ -61,11 +68,15 @@ export default class NoteFinder {
         };
 
         return Promise.all(Array.from(this._paths).map(async path => {
+            progress?.report({
+                message: `Scanning notes...`
+            });
+
             const files = await findInPath(path, 0);
             return {
                 rootPath: path,
                 noteFilesPaths: files,
-            } as NoteFindDescription;
+            } as FoundNote;
         }));
 
     }

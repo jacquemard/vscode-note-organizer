@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 
 import NoteFinder from './notefinder';
+import NoteStorage from './notestorage';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -16,17 +17,19 @@ export function activate(context: vscode.ExtensionContext) {
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
 	let findNotesdisposable = vscode.commands.registerCommand('note-organizer.findNotes', async () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Finding notes!');
-
-		const uri = vscode.Uri.file("C:/Users/jacqu/OneDrive/Documents/Project/");
+		const uri = vscode.Uri.file("C:/Users/jacqu/OneDrive/");
 
 		const noteFinder = new NoteFinder();
 		noteFinder.paths = [uri];
 
-		const fileDesc = await noteFinder.findNotesDocs();
+		const fileDesc = await vscode.window.withProgress({
+			location: vscode.ProgressLocation.Window,
+			cancellable: true,
+		}, async (progress, token) => await noteFinder.findNotesDocs([progress, token]));
 		console.log(fileDesc);
+
+		const noteStorage = new NoteStorage('main', context.globalStorageUri);
+		console.log(context.globalStorageUri);
 	});
 
 	context.subscriptions.push(findNotesdisposable);

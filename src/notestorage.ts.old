@@ -1,0 +1,14 @@
+import * as vscode from "vscode";
+
+export default class NoteStorage {
+    public readonly identifier;
+    private readonly _localDataFolder;
+
+    constructor(identifier: string, globalStorageUri: vscode.Uri) {
+        this.identifier = identifier;
+
+        // Retrieve the local folder storage
+        this._localDataFolder = vscode.Uri.joinPath(globalStorageUri, "notes", identifier);
+        vscode.workspace.fs.createDirectory(this._localDataFolder);
+    }
+}
