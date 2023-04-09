@@ -1,13 +1,30 @@
 import * as vscode from "vscode";
 
+export class Project {
+    public readonly projectID: string;  // used as identifier
+    public readonly projectName?: string;
+
+    constructor(projectID: string, projectName?: string) {
+        this.projectID = projectID;
+        this.projectName = projectName;
+    }
+
+    public static readonly unknownProject = new Project("unknown", "Unclassified");
+
+    public getDisplayName() {
+        return this.projectName || this.projectID;
+    }
+
+}
+
 
 export class Note {
     public readonly uri: vscode.Uri;  // used as identifier
-    // public readonly project?: Project;
+    public readonly project: Project;
 
-    constructor(uri: vscode.Uri) {
+    constructor(uri: vscode.Uri, project?: Project) {
         this.uri = uri;
-        // this.project = project;
+        this.project = project || Project.unknownProject;
     }
 
     public getFileName() {
@@ -26,7 +43,8 @@ interface RawNote {
 export default class NotesDB {
     private static _instance: NotesDB;
 
-    public readonly storageKey = "notesDB";
+    public readonly notesStorageKey = "notesDB";
+    public readonly projectStorageKey = "projectsDB";
 
     private _globalState: vscode.Memento;
 
@@ -34,7 +52,7 @@ export default class NotesDB {
     readonly onDBUpdated: vscode.Event<any> = this._onDBUpdated.event;
 
     private _notesDB = new Map<string, Note>();
-    // private _project: Array<Project> = [];
+    private _projectsDB = new Map<string, Project>();
 
     private constructor(globalState: vscode.Memento) {
         this._globalState = globalState;
@@ -55,8 +73,26 @@ export default class NotesDB {
     /**
      * Return all of the notes
      */
-    public getAllNotes() {
+    public getAllNotes(): Iterable<Note> {
         return this._notesDB.values();
+    }
+
+    /**
+     * Return all of the project
+     */
+    public *getAllProject(): Iterable<Project> {
+        for (const item of this._projectsDB.values()) {
+            yield item;
+        }
+
+        yield Project.unknownProject;
+    }
+
+    /**
+     * Return all of the project which are being used in at least one note
+     */
+    public getAllUsedProject(): Iterable<Project> {
+        return new Set(Array.from(this.getAllNotes()).map(note => note.project));
     }
 
     /**
@@ -73,9 +109,7 @@ export default class NotesDB {
      * @param noteUri The note location uri.
      */
     public addNoteToDBFromUri(noteUri: vscode.Uri) {
-        this._notesDB.set(noteUri.toString(), new Note(
-            noteUri
-        ));
+        this._notesDB.set(noteUri.toString(), new Note(noteUri));
 
         this._onDBUpdated.fire(undefined);
     }
@@ -85,6 +119,7 @@ export default class NotesDB {
      */
     public clearDB() {
         this._notesDB = new Map<string, Note>();
+        this._projectsDB = new Map<string, Project>();
         this._onDBUpdated.fire(undefined);
     }
 
@@ -104,7 +139,7 @@ export default class NotesDB {
      * Persists the DB in the extension storage
      */
     public persistDB() {
-        this._globalState.update(this.storageKey, this._notesDB);
+        this._globalState.update(this.notesStorageKey, this._notesDB);
     }
 
     /**
@@ -113,10 +148,10 @@ export default class NotesDB {
     public loadFromPersistantStorage() {
         this.clearDB();
 
-        const persistantVal = this._globalState.get(this.storageKey);
+        const persistantVal = this._globalState.get(this.notesStorageKey);
 
         if (persistantVal instanceof Map) {
-            this._notesDB = this._globalState.get(this.storageKey) as Map<string, Note> || new Map<string, Note>();
+            this._notesDB = this._globalState.get(this.notesStorageKey) as Map<string, Note> || new Map<string, Note>();
             this._onDBUpdated.fire(undefined);
         }
     }
