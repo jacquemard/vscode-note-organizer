@@ -1,16 +1,6 @@
 import * as vscode from "vscode";
 
 
-// export class Project {
-//     public readonly path: vscode.Uri;  // Used as identifier
-//     public readonly displayName?: string; // Overrides the name displayed
-
-//     constructor(path: vscode.Uri, displayName: string) {
-//         this.displayName = displayName;
-//         this.path = path;
-//     }
-// }
-
 export class Note {
     public readonly uri: vscode.Uri;  // used as identifier
     // public readonly project?: Project;
@@ -32,17 +22,26 @@ interface RawNote {
 }
 
 
+
 export default class NotesDB {
     private static _instance: NotesDB;
 
     public readonly storageKey = "notesDB";
 
     private _globalState: vscode.Memento;
+
+    private _onDBUpdated: vscode.EventEmitter<any> = new vscode.EventEmitter<any>();
+    readonly onDBUpdated: vscode.Event<any> = this._onDBUpdated.event;
+
     private _notesDB = new Map<string, Note>();
     // private _project: Array<Project> = [];
 
     private constructor(globalState: vscode.Memento) {
         this._globalState = globalState;
+
+        this.onDBUpdated(() => {
+            console.log("DB note updated");
+        });
     }
 
     public static getInstance(globalState: vscode.Memento) {
@@ -77,6 +76,8 @@ export default class NotesDB {
         this._notesDB.set(noteUri.toString(), new Note(
             noteUri
         ));
+
+        this._onDBUpdated.fire(undefined);
     }
 
     /**
@@ -84,6 +85,7 @@ export default class NotesDB {
      */
     public clearDB() {
         this._notesDB = new Map<string, Note>();
+        this._onDBUpdated.fire(undefined);
     }
 
     /**
@@ -94,6 +96,8 @@ export default class NotesDB {
         for (const note of notesUris) {
             this.addNoteToDBFromUri(note);
         }
+
+        this._onDBUpdated.fire(undefined);
     }
 
     /**
@@ -113,6 +117,7 @@ export default class NotesDB {
 
         if (persistantVal instanceof Map) {
             this._notesDB = this._globalState.get(this.storageKey) as Map<string, Note> || new Map<string, Note>();
+            this._onDBUpdated.fire(undefined);
         }
     }
 }

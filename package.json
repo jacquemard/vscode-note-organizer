@@ -24,6 +24,14 @@
         "category": "Note Organizer"
       }
     ],
+    "views": {
+      "explorer": [
+        {
+          "id": "noteOrganizer",
+          "name": "Note Organizer"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
