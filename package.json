@@ -23,6 +23,11 @@
         "command": "noteOrganizer.openNote",
         "title": "Open note",
         "category": "Note Organizer"
+      },
+      {
+        "command": "noteOrganizer.clearDatabase",
+        "title": "Clear database",
+        "category": "Note Organizer"
       }
     ],
     "views": {

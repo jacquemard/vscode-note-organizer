@@ -26,7 +26,7 @@ export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
     getChildren(element?: Node | undefined): vscode.ProviderResult<Node[]> {
         if (!element) {
             // Called for the root element
-            const projects = Array.from(this._notesDB.getAllUsedProject()).filter(project => project !== Project.unknownProject).map(project => {
+            const projects = Array.from(this._notesDB.getAllProject()).filter(project => project !== Project.unknownProject).map(project => {
                 return {
                     type: NodeType.project,
                     data: project,

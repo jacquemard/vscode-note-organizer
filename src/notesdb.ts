@@ -87,12 +87,8 @@ export default class NotesDB {
     /**
      * Return all of the project
      */
-    public *getAllProject(): Iterable<Project> {
-        for (const item of this._projectsDB.values()) {
-            yield item;
-        }
-
-        yield Project.unknownProject;
+    public getAllProject(): Iterable<Project> {
+        return this._projectsDB.values();
     }
 
     /**
@@ -118,6 +114,20 @@ export default class NotesDB {
      */
     public getProjectFromUri(projectID: vscode.Uri) {
         return this._projectsDB.get(projectID.toString());
+    }
+
+
+    /**
+     * Return a project based on its URI, if any
+     * @param noteUri The project location uri
+     * @returns The project, if any
+     */
+    public getProjectFromIdentifier(projectID: string) {
+        if (projectID === Project.unknownProject.projectID) {
+            return Project.unknownProject;
+        }
+
+        return this._projectsDB.get(projectID);
     }
 
 
@@ -157,6 +167,7 @@ export default class NotesDB {
      */
     public saveNote(note: Note) {
         this._notesDB.set(note.uri.toString(), note);
+        this._onDBUpdated.fire(undefined);
     }
 
     /**
@@ -165,6 +176,7 @@ export default class NotesDB {
      */
     public saveProject(project: Project) {
         this._projectsDB.set(project.projectID, project);
+        this._onDBUpdated.fire(undefined);
     }
 
     /**
@@ -200,8 +212,8 @@ export default class NotesDB {
      * Persists the DB in the extension storage
      */
     public persistDB() {
-        this._globalState.update(this.notesStorageKey, this._notesDB);
-        this._globalState.update(this.projectsStorageKey, this._projectsDB);
+        this._globalState.update(this.notesStorageKey, this.serializeMap(this._notesDB));
+        this._globalState.update(this.projectsStorageKey, this.serializeMap(this._projectsDB));
     }
 
     /**
@@ -210,12 +222,46 @@ export default class NotesDB {
     public loadFromPersistantStorage() {
         this.clearDB();
 
-        const persistantVal = this._globalState.get(this.notesStorageKey);
-
-        if (persistantVal instanceof Map) {
-            this._notesDB = this._globalState.get(this.notesStorageKey) as Map<string, Note> || new Map<string, Note>();
-            this._projectsDB = this._globalState.get(this.projectsStorageKey) as Map<string, Project> || new Map<string, Project>();
-            this._onDBUpdated.fire(undefined);
+        // Load projects
+        const projectVal = this._globalState.get(this.projectsStorageKey, null);
+        if (!projectVal) {
+            return;
         }
+
+        const projectValMap = this.deserializeToMap(projectVal);
+        for (let [key, value] of projectValMap.entries()) {
+            if (value.projectID === Project.unknownProject.projectID) {
+                continue;
+            }
+
+            this._projectsDB.set(key, new Project(value.projectID, value.projectName));
+        }
+
+        // Load notes
+        const noteVal = this._globalState.get(this.notesStorageKey, null);
+        if (!noteVal) {
+            return;
+        }
+
+        const noteValMap = this.deserializeToMap(noteVal);
+        for (let [key, value] of noteValMap.entries()) {
+            this._notesDB.set(key, new Note(vscode.Uri.parse(value.uri.external), this.getProjectFromIdentifier(value.project.projectID)));
+        }
+
+        this._onDBUpdated.fire(undefined);
+
+        // if (noteVal instanceof Map) {
+        //     this._notesDB = noteVal as Map<string, Note> || new Map<string, Note>();
+        //     // this._projectsDB = this._globalState.get(this.projectsStorageKey) as Map<string, Project> || new Map<string, Project>();
+        //     this._onDBUpdated.fire(undefined);
+        // }
+    }
+
+    private serializeMap(val: Map<any, any>) {
+        return Array.from(val.entries());
+    }
+
+    private deserializeToMap(val: Array<[any, any]>) {
+        return new Map(val);
     }
 }

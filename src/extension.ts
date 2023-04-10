@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import NotesDB from './notesdb';
-import { openNoteDialog, scanFolderAndSaveNotes } from './interaction';
+import { clearDatabase, openNoteDialog, scanFolderAndSaveNotes } from './interaction';
 import { NotesTreeDataProvider } from './treedata';
 
 
@@ -21,6 +21,12 @@ export function activate(context: vscode.ExtensionContext) {
 		openNoteDialog(context);
 	});
 	context.subscriptions.push(openNoteDisposable);
+
+	let clearDatabaseDisposable = vscode.commands.registerCommand('noteOrganizer.clearDatabase', async () => {
+		clearDatabase(context);
+	});
+	context.subscriptions.push(clearDatabaseDisposable);
+
 
 	// Treeview
 	vscode.window.registerTreeDataProvider('noteOrganizer', new NotesTreeDataProvider(notesDB));
