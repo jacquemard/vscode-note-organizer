@@ -179,6 +179,16 @@ export default class NotesDB {
         this._onDBUpdated.fire(undefined);
     }
 
+    public deleteProjectByID(projectID: string) {
+        this._projectsDB.delete(projectID);
+        this._onDBUpdated.fire(undefined);
+    }
+
+    public deleteNoteByURI(noteURI: vscode.Uri) {
+        this._notesDB.delete(noteURI.toString());
+        this._onDBUpdated.fire(undefined);
+    }
+
     /**
      * Clear the database
      */
@@ -212,8 +222,8 @@ export default class NotesDB {
      * Persists the DB in the extension storage
      */
     public persistDB() {
-        this._globalState.update(this.notesStorageKey, this.serializeMap(this._notesDB));
-        this._globalState.update(this.projectsStorageKey, this.serializeMap(this._projectsDB));
+        this._globalState.update(this.notesStorageKey, this.serializeNotes(this._notesDB));
+        this._globalState.update(this.projectsStorageKey, this.serializeProjects(this._projectsDB));
     }
 
     /**
@@ -227,34 +237,16 @@ export default class NotesDB {
         if (!projectVal) {
             return;
         }
-
-        const projectValMap = this.deserializeToMap(projectVal);
-        for (let [key, value] of projectValMap.entries()) {
-            if (value.projectID === Project.unknownProject.projectID) {
-                continue;
-            }
-
-            this._projectsDB.set(key, new Project(value.projectID, value.projectName));
-        }
+        this._projectsDB = this.deserializeProject(projectVal);
 
         // Load notes
         const noteVal = this._globalState.get(this.notesStorageKey, null);
         if (!noteVal) {
             return;
         }
-
-        const noteValMap = this.deserializeToMap(noteVal);
-        for (let [key, value] of noteValMap.entries()) {
-            this._notesDB.set(key, new Note(vscode.Uri.parse(value.uri.external), this.getProjectFromIdentifier(value.project.projectID)));
-        }
+        this._notesDB = this.deserializeNotes(noteVal);
 
         this._onDBUpdated.fire(undefined);
-
-        // if (noteVal instanceof Map) {
-        //     this._notesDB = noteVal as Map<string, Note> || new Map<string, Note>();
-        //     // this._projectsDB = this._globalState.get(this.projectsStorageKey) as Map<string, Project> || new Map<string, Project>();
-        //     this._onDBUpdated.fire(undefined);
-        // }
     }
 
     private serializeMap(val: Map<any, any>) {
@@ -264,4 +256,30 @@ export default class NotesDB {
     private deserializeToMap(val: Array<[any, any]>) {
         return new Map(val);
     }
+
+    private serializeNotes(val: Map<string, Note>): Array<[string, any]> {
+        return Array.from(this._notesDB.entries()).map(([key, note]) => {
+            return [key, {
+                project: note.project.projectID,
+                uri: note.uri.toString()
+            }];
+        });
+    }
+
+    private serializeProjects(val: Map<string, Project>): Array<[string, any]> {
+        return this.serializeMap(val);
+    }
+
+    private deserializeProject(values: Array<[string, any]>): Map<string, Project> {
+        return new Map(values.map(([key, value]) => {
+            return [key, new Project(value.projectID, value.projectName)];
+        }));
+    };
+
+    private deserializeNotes(values: Array<[string, any]>): Map<string, Note> {
+        return new Map(values.map(([key, value]) => {
+            return [key, new Note(vscode.Uri.parse(value.uri), this.getProjectFromIdentifier(value.project))];
+        }));
+    };
 }
+

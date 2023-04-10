@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import NotesDB, { Note, Project } from "./notesdb";
 import NoteScanner from "./notescanner";
 import ProjectScanner from "./projectscanner";
+import { Node } from "./treedata";
 
 
 export async function openNoteDialog(context: vscode.ExtensionContext) {
@@ -112,12 +113,11 @@ export async function scanUrisAndSaveNotes(uris: Array<vscode.Uri>, context: vsc
 
 export async function clearDatabase(context: vscode.ExtensionContext) {
     const selected = await vscode.window.showWarningMessage("Are you sure you want to clear the note database? All of the note and projects will be removed from the database, but won't be deleted from the harddrive.", {
-        title: "Cancel",
-        isCloseAffordance: true,
-    }, {
         title: "Yes",
         value: "confirmed",
-    });
+    }, {
+        title: "Cancel"
+    },);
 
     if (selected && selected.value === "confirmed") {
         const notesDB = NotesDB.getInstance(context.globalState);
@@ -126,4 +126,57 @@ export async function clearDatabase(context: vscode.ExtensionContext) {
 
         vscode.window.showInformationMessage("The note database has been cleared!");
     }
+}
+
+export async function createNewProject(context: vscode.ExtensionContext) {
+    const projectName = await vscode.window.showInputBox({
+        title: "New project",
+        placeHolder: "My project name",
+    });
+
+    if (!projectName) {
+        return;
+    }
+
+    const notesDB = NotesDB.getInstance(context.globalState);
+
+    // Check if project already exists
+    if (Array.from(notesDB.getAllProject()).filter(proj => proj.projectID === projectName || proj.getDisplayName() === projectName).length > 0) {
+        await vscode.window.showWarningMessage(`A project with name ${projectName} already exists.`);
+        return;
+    }
+
+    notesDB.saveProject(new Project(projectName, projectName));
+}
+
+export async function deleteProject(node: Node, context: vscode.ExtensionContext) {
+    console.log(node);
+
+    if (!(node.data instanceof Project)) {
+        return;
+    }
+
+    const notesDB = NotesDB.getInstance(context.globalState);
+
+    // Check if project is empty
+    if (Array.from(notesDB.getAllUsedProject()).filter(proj => node.data).length > 0) {
+        const selected = await vscode.window.showWarningMessage("This project contains some notes, which will also be removed from the databse. Are you sure you want to continue?", {
+            title: "Yes",
+            value: "confirmed",
+        }, {
+            title: "Cancel",
+        });
+
+        if (selected?.value !== "confirmed") {
+            return;
+        }
+    }
+
+    // Delete the linked notes
+    Array.from(notesDB.getAllNotes()).filter(note => note.project === node.data).forEach(note => notesDB.deleteNoteByURI(note.uri));
+
+    // Delete project
+    notesDB.deleteProjectByID(node.data.projectID);
+
+    notesDB.persistDB();
 }

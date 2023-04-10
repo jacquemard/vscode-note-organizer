@@ -28,6 +28,19 @@
         "command": "noteOrganizer.clearDatabase",
         "title": "Clear database",
         "category": "Note Organizer"
+      },
+      {
+        "command": "noteOrganizer.createProject",
+        "title": "Create a new project",
+        "category": "Note Organizer",
+        "shortTitle": "Create Project",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "noteOrganizer.deleteProject",
+        "title": "Delete project",
+        "category": "Note Organizer",
+        "icon": "$(trash)"
       }
     ],
     "views": {
@@ -35,6 +48,28 @@
         {
           "id": "noteOrganizer",
           "name": "Note Organizer"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "noteOrganizer.createProject",
+          "group": "navigation",
+          "when": "view == noteOrganizer"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "noteOrganizer.deleteProject",
+          "group": "inline",
+          "when": "view == noteOrganizer && viewItem == project"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "noteOrganizer.deleteProject",
+          "when": "false"
         }
       ]
     },

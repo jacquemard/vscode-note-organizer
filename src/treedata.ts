@@ -12,8 +12,8 @@ export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
     constructor(notesDB: NotesDB) {
         this._notesDB = notesDB;
         notesDB.onDBUpdated(() => this._onDidChangeTreeData.fire(undefined));
-
     }
+
     getTreeItem(element: Node): vscode.TreeItem | Thenable<vscode.TreeItem> {
         if (element.type === NodeType.note && element.data instanceof Note) {
             return new NoteItem(element.data);
@@ -23,6 +23,7 @@ export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
 
         return new vscode.TreeItem("Error");
     }
+
     getChildren(element?: Node | undefined): vscode.ProviderResult<Node[]> {
         if (!element) {
             // Called for the root element
@@ -63,7 +64,7 @@ enum NodeType {
     note
 }
 
-interface Node {
+export interface Node {
     type: NodeType,
     data: Project | Note,
 }
@@ -77,7 +78,7 @@ class ProjectItem extends vscode.TreeItem {
         );
 
         this.resourceUri = project.getUri();
-        this.contextValue = "folder";
+        this.contextValue = "project";
         this.description = project.projectID;
         this.iconPath = new vscode.ThemeIcon("file-directory");
     }
@@ -95,6 +96,6 @@ class NoteItem extends vscode.TreeItem {
             command: 'vscode.open',
             arguments: [note.uri]
         };
-        this.contextValue = "file";
+        this.contextValue = "note";
     }
 }
