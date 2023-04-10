@@ -95,6 +95,5 @@ export default class ProjectScanner {
                 projectPath: project,
             } as FoundProject;
         }));
-
     }
 }

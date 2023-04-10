@@ -136,13 +136,17 @@ export default class NotesDB {
      * @param noteUri The note location uri.
      */
     public addNoteToDBFromUri(noteUri: vscode.Uri) {
-        if (this._notesDB.has(noteUri.toString())) {
-            return;
+        const existingNote = this._notesDB.get(noteUri.toString());
+
+        if (existingNote) {
+            return existingNote;
         }
 
-        this._notesDB.set(noteUri.toString(), new Note(noteUri));
-
+        const newNote = new Note(noteUri);
+        this._notesDB.set(noteUri.toString(), newNote);
         this._onDBUpdated.fire(undefined);
+
+        return newNote;
     }
 
     /**
@@ -150,15 +154,20 @@ export default class NotesDB {
      * @param noteUri The note location uri.
      */
     public addProjectToDBFromUri(projectUri: vscode.Uri) {
-        if (this._projectsDB.has(projectUri.toString())) {
-            return;
+        const existingProject = this._projectsDB.get(projectUri.toString());
+
+        if (existingProject) {
+            return existingProject;
         }
 
         const pathParts = projectUri.path.split('/').filter(Boolean);
         const fileName = pathParts[pathParts.length - 1];
+        const newProject = new Project(projectUri.toString(), fileName);
 
-        this._projectsDB.set(projectUri.toString(), new Project(projectUri.toString(), fileName));
+        this._projectsDB.set(projectUri.toString(), newProject);
         this._onDBUpdated.fire(undefined);
+
+        return newProject;
     }
 
     /**

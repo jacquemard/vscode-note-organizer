@@ -10,7 +10,9 @@
     "Other"
   ],
   "publisher": "RemiJacquemard",
-  "activationEvents": [],
+  "activationEvents": [
+    "onFileSystem:file"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -41,6 +43,24 @@
         "title": "Delete project",
         "category": "Note Organizer",
         "icon": "$(trash)"
+      },
+      {
+        "command": "noteOrganizer.editProjectName",
+        "title": "Edit project name",
+        "category": "Note Organizer",
+        "icon": "$(pencil)"
+      },
+      {
+        "command": "noteOrganizer.deleteNote",
+        "title": "Delete note",
+        "category": "Note Organizer",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "noteOrganizer.importNoteToProject",
+        "title": "Import existing note",
+        "category": "Note Organizer",
+        "icon": "$(go-to-file)"
       }
     ],
     "views": {
@@ -57,6 +77,11 @@
           "command": "noteOrganizer.createProject",
           "group": "navigation",
           "when": "view == noteOrganizer"
+        },
+        {
+          "command": "noteOrganizer.importNoteToProject",
+          "group": "navigation",
+          "when": "view == noteOrganizer"
         }
       ],
       "view/item/context": [
@@ -64,11 +89,34 @@
           "command": "noteOrganizer.deleteProject",
           "group": "inline",
           "when": "view == noteOrganizer && viewItem == project"
+        },
+        {
+          "command": "noteOrganizer.editProjectName",
+          "group": "inline",
+          "when": "view == noteOrganizer && viewItem == project"
+        },
+        {
+          "command": "noteOrganizer.deleteNote",
+          "group": "inline",
+          "when": "view == noteOrganizer && viewItem == note"
+        },
+        {
+          "command": "noteOrganizer.importNoteToProject",
+          "group": "inline",
+          "when": "view == noteOrganizer && viewItem == project"
         }
       ],
       "commandPalette": [
         {
           "command": "noteOrganizer.deleteProject",
+          "when": "false"
+        },
+        {
+          "command": "noteOrganizer.editProjectName",
+          "when": "false"
+        },
+        {
+          "command": "noteOrganizer.deleteNote",
           "when": "false"
         }
       ]

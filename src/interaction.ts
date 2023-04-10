@@ -5,23 +5,56 @@ import ProjectScanner from "./projectscanner";
 import { Node } from "./treedata";
 
 
-export async function openNoteDialog(context: vscode.ExtensionContext) {
+async function selectNoteDialog(context: vscode.ExtensionContext) {
     const notesDB = NotesDB.getInstance(context.globalState);
 
     const quickPicks = Array.from(notesDB.getAllNotes()).map(note => {
         return {
-            label: note.getFileName(),
+            label: `${note.getFileName()} [${note.project.getDisplayName()}]`,
             detail: note.uri.toString(true),
             note: note,
         } as vscode.QuickPickItem & { note: Note };
     });
 
     const selected = await vscode.window.showQuickPick(quickPicks, {
-        title: "Pick a note to open",
+        title: "Pick a note",
     });
 
     if (selected) {
-        openNote(selected.note);
+        return selected.note;
+    }
+
+    return null;
+}
+
+async function selectProjectDialog(context: vscode.ExtensionContext) {
+    const notesDB = NotesDB.getInstance(context.globalState);
+
+    const quickPicks = Array.from(notesDB.getAllProject()).map(project => {
+        return {
+            label: project.getDisplayName(),
+            detail: project.projectID,
+            project: project,
+        } as vscode.QuickPickItem & { project: Project };
+    });
+
+    const selected = await vscode.window.showQuickPick(quickPicks, {
+        title: "Pick a project",
+    });
+
+    if (selected) {
+        return selected.project;
+    }
+
+    return null;
+}
+
+
+export async function openNoteDialog(context: vscode.ExtensionContext) {
+    const selected = await selectNoteDialog(context);
+
+    if (selected) {
+        openNote(selected);
     }
 
 }
@@ -150,8 +183,6 @@ export async function createNewProject(context: vscode.ExtensionContext) {
 }
 
 export async function deleteProject(node: Node, context: vscode.ExtensionContext) {
-    console.log(node);
-
     if (!(node.data instanceof Project)) {
         return;
     }
@@ -159,7 +190,7 @@ export async function deleteProject(node: Node, context: vscode.ExtensionContext
     const notesDB = NotesDB.getInstance(context.globalState);
 
     // Check if project is empty
-    if (Array.from(notesDB.getAllUsedProject()).filter(proj => node.data).length > 0) {
+    if (Array.from(notesDB.getAllUsedProject()).filter(proj => proj === node.data).length > 0) {
         const selected = await vscode.window.showWarningMessage("This project contains some notes, which will also be removed from the databse. Are you sure you want to continue?", {
             title: "Yes",
             value: "confirmed",
@@ -179,4 +210,87 @@ export async function deleteProject(node: Node, context: vscode.ExtensionContext
     notesDB.deleteProjectByID(node.data.projectID);
 
     notesDB.persistDB();
+}
+
+
+export async function editProjectName(node: Node, context: vscode.ExtensionContext) {
+    if (!(node.data instanceof Project)) {
+        return;
+    }
+
+    const newName = await vscode.window.showInputBox({
+        title: `New project name for ${node.data.getDisplayName()}`,
+        value: node.data.projectName,
+    });
+
+    if (!newName) {
+        return;
+    }
+
+    node.data.projectName = newName;
+
+    const notesDB = NotesDB.getInstance(context.globalState);
+    notesDB.saveProject(node.data);
+    notesDB.persistDB();
+}
+
+export async function deleteNote(node: Node, context: vscode.ExtensionContext) {
+    if (!(node.data instanceof Note)) {
+        return;
+    }
+
+    const notesDB = NotesDB.getInstance(context.globalState);
+    notesDB.deleteNoteByURI(node.data.uri);
+    notesDB.persistDB();
+}
+
+
+export async function importNoteToProject(node: Node | undefined, context: vscode.ExtensionContext) {
+    // Select note
+    let noteFiles = await vscode.window.showOpenDialog({
+        canSelectFiles: true,
+        canSelectFolders: false,
+        canSelectMany: true,
+        openLabel: "Import",
+        title: "Select note files to import"
+    });
+
+    noteFiles = noteFiles || [];
+
+    // Select project
+    let project: Project;
+    if (node && node?.data instanceof Project) {
+        project = node.data;
+    } else {
+        // project = await selectProjectDialog(context);
+        project = Project.unknownProject;
+    }
+
+    // Import only those which does not already exists
+    const notesDB = NotesDB.getInstance(context.globalState);
+    const existingUris = Array.from(notesDB.getAllNotes()).map(note => note.uri.toString());
+
+    noteFiles.filter(file => !existingUris.includes(file.toString())).map(notefile => new Note(notefile, project)).forEach(note => notesDB.saveNote(note));
+    notesDB.persistDB();
+}
+
+export async function tryImportTextDocument(textDocument: vscode.TextDocument, context: vscode.ExtensionContext) {
+    const noteScanner = new NoteScanner();
+    const projectScanner = new ProjectScanner([textDocument.uri]);
+    const notesDB = NotesDB.getInstance(context.globalState);
+
+    if (noteScanner.isUriANote(textDocument.uri)) {
+        const projectDescs = await projectScanner.searchProjects();
+        const projectPath = projectDescs[0].projectPath;
+
+        const note = notesDB.addNoteToDBFromUri(textDocument.uri);
+
+        // Add the project if known
+        if (projectPath) {
+            const project = notesDB.addProjectToDBFromUri(projectPath);
+            note.project = project;
+            notesDB.saveNote(note);
+        }
+
+    }
 }

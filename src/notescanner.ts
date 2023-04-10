@@ -73,7 +73,7 @@ export default class NoteScanner {
                 const filePathParts = filePath.path.split('/');
                 const fileName = filePathParts[filePathParts.length - 1];
 
-                if (this.noteFilenameRegex.test(fileName)) {
+                if (this.isFilenameANote(fileName)) {
                     fileList.push(filePath);
                     console.log(`Found note file at ${filePath.fsPath}`);
                     progress?.report({ message: `Found note "${fileName}"` });
@@ -94,6 +94,14 @@ export default class NoteScanner {
                 noteFilesPaths: files,
             } as FoundNote;
         }));
+    }
 
+    public isFilenameANote(fileName: string): boolean {
+        return this.noteFilenameRegex.test(fileName);
+    }
+
+    public isUriANote(uri: vscode.Uri): boolean {
+        const pathParts = uri.path.split('/');
+        return this.isFilenameANote(pathParts[pathParts.length - 1]);
     }
 }
