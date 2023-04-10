@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import NotesDB from './notesdb';
 import { importNoteToProject, clearDatabase, createNewProject, deleteNote, deleteProject, editProjectName, openNoteDialog, scanFolderAndSaveNotes, tryImportTextDocument } from './interaction';
-import { NotesTreeDataProvider } from './treedata';
+import { NotesTreeDataProvider, NotesTreeDragAndDropController } from './treedata';
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -46,7 +46,13 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	// Treeview
-	vscode.window.registerTreeDataProvider('noteOrganizer', new NotesTreeDataProvider(notesDB));
+	// vscode.window.registerTreeDataProvider('noteOrganizer', new NotesTreeDataProvider(notesDB));
+
+	vscode.window.createTreeView('noteOrganizer', {
+		treeDataProvider: new NotesTreeDataProvider(notesDB),
+		showCollapseAll: true,
+		dragAndDropController: new NotesTreeDragAndDropController(notesDB)
+	});
 
 }
 

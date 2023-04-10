@@ -30,7 +30,7 @@ export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
             const projects = Array.from(this._notesDB.getAllProject()).filter(project => project !== Project.unknownProject).map(project => {
                 return {
                     type: NodeType.project,
-                    data: project,
+                    data: project
                 } as Node;
             });
 
@@ -59,6 +59,58 @@ export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
 
 }
 
+export class NotesTreeDragAndDropController implements vscode.TreeDragAndDropController<Node> {
+    public readonly mimeType = "application/vnd.code.tree.noteOrganizer";
+    public readonly dropMimeTypes = [this.mimeType];
+    public readonly dragMimeTypes = [this.mimeType];
+
+    private readonly _notesDB: NotesDB;
+
+    constructor(notesDB: NotesDB) {
+        this._notesDB = notesDB;
+    }
+
+    handleDrag?(source: readonly Node[], dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): void | Thenable<void> {
+        // Only note are draggable
+        dataTransfer.set(this.mimeType, new vscode.DataTransferItem(source.filter(node => node.type === NodeType.note).map(node => (node.data as Note).uri.toString())));
+    }
+    handleDrop?(target: Node | undefined, dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): void | Thenable<void> {
+        let mimetypeData = dataTransfer.get(this.mimeType);
+
+        if (!mimetypeData) {
+            // Wrong mimetype
+            return;
+        }
+
+        const sourceNoteUrisStr = mimetypeData.value as String[];
+        const sourceNotes = Array.from(this._notesDB.getAllNotes()).filter(note => sourceNoteUrisStr.includes(note.uri.toString()));
+
+        // Find the target project
+        let project: Project;
+
+        if (!target) {
+            project = Project.unknownProject;
+        } else {
+            if (target.type === NodeType.project) {
+                project = target.data as Project;
+            } else if (target.type === NodeType.note) {
+                const note = target.data as Note;
+                project = note.project;
+            }
+        }
+
+        // Update database
+        sourceNotes.forEach(sourceNote => {
+            sourceNote.project = project;
+            this._notesDB.saveNote(sourceNote);
+
+        });
+
+        this._notesDB.persistDB();
+    }
+
+}
+
 enum NodeType {
     project,
     note
@@ -66,7 +118,7 @@ enum NodeType {
 
 export interface Node {
     type: NodeType,
-    data: Project | Note,
+    data: Project | Note
 }
 
 
