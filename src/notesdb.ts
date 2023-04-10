@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 
 export class Project {
-    public readonly projectID: string;  // used as identifier
-    public readonly projectName?: string;
+    public projectID: string;  // used as identifier
+    public projectName?: string;
 
     constructor(projectID: string, projectName?: string) {
         this.projectID = projectID;
@@ -15,12 +15,19 @@ export class Project {
         return this.projectName || this.projectID;
     }
 
+    /**
+     * Try to parse projectID to see if it is an URI
+     */
+    public getUri() {
+        return vscode.Uri.parse(this.projectID);
+    }
+
 }
 
 
 export class Note {
-    public readonly uri: vscode.Uri;  // used as identifier
-    public readonly project: Project;
+    public uri: vscode.Uri;  // used as identifier
+    public project: Project;
 
     constructor(uri: vscode.Uri, project?: Project) {
         this.uri = uri;
@@ -44,7 +51,7 @@ export default class NotesDB {
     private static _instance: NotesDB;
 
     public readonly notesStorageKey = "notesDB";
-    public readonly projectStorageKey = "projectsDB";
+    public readonly projectsStorageKey = "projectsDB";
 
     private _globalState: vscode.Memento;
 
@@ -105,13 +112,59 @@ export default class NotesDB {
     }
 
     /**
-     * Adds the given noteURI to the DB. Replace it if it already exists
+     * Return a project based on its URI, if any
+     * @param noteUri The project location uri
+     * @returns The project, if any
+     */
+    public getProjectFromUri(projectID: vscode.Uri) {
+        return this._projectsDB.get(projectID.toString());
+    }
+
+
+    /**
+     * Adds the given noteURI to the DB. Do not replace it if it already exists
      * @param noteUri The note location uri.
      */
     public addNoteToDBFromUri(noteUri: vscode.Uri) {
+        if (this._notesDB.has(noteUri.toString())) {
+            return;
+        }
+
         this._notesDB.set(noteUri.toString(), new Note(noteUri));
 
         this._onDBUpdated.fire(undefined);
+    }
+
+    /**
+     * Adds the given projectURI to the DB. Don't replace it if it already exists.
+     * @param noteUri The note location uri.
+     */
+    public addProjectToDBFromUri(projectUri: vscode.Uri) {
+        if (this._projectsDB.has(projectUri.toString())) {
+            return;
+        }
+
+        const pathParts = projectUri.path.split('/').filter(Boolean);
+        const fileName = pathParts[pathParts.length - 1];
+
+        this._projectsDB.set(projectUri.toString(), new Project(projectUri.toString(), fileName));
+        this._onDBUpdated.fire(undefined);
+    }
+
+    /**
+     * Save or update the given note. Update based on note uri.
+     * @param note
+     */
+    public saveNote(note: Note) {
+        this._notesDB.set(note.uri.toString(), note);
+    }
+
+    /**
+     * Save or update the given project. Update based on project ID.
+     * @param note
+     */
+    public saveProject(project: Project) {
+        this._projectsDB.set(project.projectID, project);
     }
 
     /**
@@ -124,15 +177,23 @@ export default class NotesDB {
     }
 
     /**
-     * Adds the given noteURIs to the DB. Replace them if they already exist.
+     * Adds the given noteURIs to the DB. Do not replace them if they already exist.
      * @param notesUris The note location uris.
      */
     public populateDBFromNoteUris(notesUris: Iterable<vscode.Uri>) {
         for (const note of notesUris) {
             this.addNoteToDBFromUri(note);
         }
+    }
 
-        this._onDBUpdated.fire(undefined);
+    /**
+     * Adds the given noteURIs to the DB. Do not replace them if they already exist.
+     * @param notesUris The note location uris.
+     */
+    public populateDBFromProjectUris(projectUris: Iterable<vscode.Uri>) {
+        for (const uri of projectUris) {
+            this.addProjectToDBFromUri(uri);
+        }
     }
 
     /**
@@ -140,6 +201,7 @@ export default class NotesDB {
      */
     public persistDB() {
         this._globalState.update(this.notesStorageKey, this._notesDB);
+        this._globalState.update(this.projectsStorageKey, this._projectsDB);
     }
 
     /**
@@ -152,6 +214,7 @@ export default class NotesDB {
 
         if (persistantVal instanceof Map) {
             this._notesDB = this._globalState.get(this.notesStorageKey) as Map<string, Note> || new Map<string, Note>();
+            this._projectsDB = this._globalState.get(this.projectsStorageKey) as Map<string, Project> || new Map<string, Project>();
             this._onDBUpdated.fire(undefined);
         }
     }

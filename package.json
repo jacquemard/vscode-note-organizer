@@ -16,7 +16,7 @@
     "commands": [
       {
         "command": "noteOrganizer.scanFolderForNotes",
-        "title": "Scan folder for notes",
+        "title": "Scan folder for new notes",
         "category": "Note Organizer"
       },
       {

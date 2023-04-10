@@ -12,7 +12,7 @@ interface FoundNote {
 export default class NoteScanner {
 
     private readonly noteFilenameRegex = new RegExp(/^.*note.*(\.md|\.txt)$/gis);
-    private readonly maxRecursionDepth = 20;
+    private readonly maxRecursionDepth = 30;
 
     private _paths: Iterable<vscode.Uri> = [];
 

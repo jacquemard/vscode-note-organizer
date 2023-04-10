@@ -26,14 +26,25 @@ export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
     getChildren(element?: Node | undefined): vscode.ProviderResult<Node[]> {
         if (!element) {
             // Called for the root element
-            return Array.from(this._notesDB.getAllUsedProject()).map(project => {
+            const projects = Array.from(this._notesDB.getAllUsedProject()).filter(project => project !== Project.unknownProject).map(project => {
                 return {
                     type: NodeType.project,
                     data: project,
                 } as Node;
             });
+
+            // Also include unknown project notes
+            const unknownProjectNotes = Array.from(this._notesDB.getAllNotes()).filter(note => note.project === Project.unknownProject).map(note => {
+                return {
+                    type: NodeType.note,
+                    data: note,
+                } as Node;
+            });
+
+            return [...unknownProjectNotes, ...projects];
+
         } else if (element.type === NodeType.project) {
-            // Called from project Node
+            // Called from project node.
             return Array.from(this._notesDB.getAllNotes()).filter(note => note.project === element.data).map(note => {
                 return {
                     type: NodeType.note,
@@ -65,13 +76,10 @@ class ProjectItem extends vscode.TreeItem {
             vscode.TreeItemCollapsibleState.Expanded,
         );
 
-        // TODO: logo
-        // this.resourceUri = note.uri;
-        // this.command = {
-        //     title: "open",
-        //     command: 'vscode.open',
-        //     arguments: [note.uri]
-        // };
+        this.resourceUri = project.getUri();
+        this.contextValue = "folder";
+        this.description = project.projectID;
+        this.iconPath = new vscode.ThemeIcon("file-directory");
     }
 }
 
@@ -87,5 +95,6 @@ class NoteItem extends vscode.TreeItem {
             command: 'vscode.open',
             arguments: [note.uri]
         };
+        this.contextValue = "file";
     }
 }
