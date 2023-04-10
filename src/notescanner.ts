@@ -18,6 +18,9 @@ export default class NoteScanner {
 
     public constructor(paths?: Iterable<vscode.Uri>) {
         this.paths = paths || [];
+
+        console.log(vscode.workspace.getConfiguration("noteOrganizer"));
+        this.noteFilenameRegex = new RegExp(vscode.workspace.getConfiguration("noteOrganizer").get('noteFileRegex', "^.*note.*(\.md|\.txt)$"), "gis");
     }
 
     public set paths(paths: Iterable<vscode.Uri>) {

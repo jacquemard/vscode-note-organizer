@@ -99,5 +99,5 @@ export async function scanUrisAndSaveNotes(uris: Array<vscode.Uri>, context: vsc
 
     // Persist storage
     notesDB.persistDB();
-    vscode.window.showInformationMessage(`Note scanning finished successfully. Found ${allNoteFiles.length} note files, grouped in ${projectDescs.length} projects.`);
+    vscode.window.showInformationMessage(`Note scanning finished successfully. Found ${allNoteFiles.length} note files (${projectDescs.length} projects).`);
 }

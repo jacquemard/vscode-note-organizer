@@ -12,12 +12,14 @@ interface FoundProject {
  */
 export default class ProjectScanner {
 
-    private readonly projectInnerFileRegex = new RegExp(/^.vscode$/gis);
+    private readonly projectInnerFileRegex;
 
     private _paths: Iterable<vscode.Uri> = [];
 
     public constructor(paths?: Iterable<vscode.Uri>) {
         this.paths = paths || [];
+
+        this.projectInnerFileRegex = new RegExp(vscode.workspace.getConfiguration("noteOrganizer").get('projectInnerFileRegex', "^.vscode$"), "gis");
     }
 
     public set paths(paths: Iterable<vscode.Uri>) {
@@ -68,7 +70,7 @@ export default class ProjectScanner {
             }
 
             const pathParts = fileOrFolderPath.path.split('/');
-            if (pathParts.length <= 1) {
+            if (pathParts.filter(Boolean).length <= 1) {
                 console.log(`No project found at ${fileOrFolderPath}`);
                 // No more parent
                 return null;

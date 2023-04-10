@@ -32,7 +32,28 @@
           "name": "Note Organizer"
         }
       ]
-    }
+    },
+    "configuration": [
+      {
+        "title": "Note Organizer",
+        "properties": {
+          "noteOrganizer.noteFileRegex": {
+            "title": "Note File Regex",
+            "description": "The regex used to filter file while scanning for notes. The filename should match the given regex to be considered a note file.",
+            "type": "string",
+            "default": "^.*note.*(\\.md|\\.txt)$",
+            "minLength": 1
+          },
+          "noteOrganizer.projectInnerFileRegex": {
+            "title": "Project Inner File Regex",
+            "markdownDescription": "The regex used to find out if a given folder should be considered as a project while scanning for notes. For a given folder `/a/b/`, `b` would be considered a project if any of its sub file and folder match this regex. By default, filter on `.vscode` files.",
+            "type": "string",
+            "default": "^.vscode$",
+            "minLength": 1
+          }
+        }
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
