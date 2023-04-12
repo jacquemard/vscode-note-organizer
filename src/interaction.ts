@@ -3,6 +3,7 @@ import NotesDB, { Note, Project } from "./notesdb";
 import NoteScanner from "./notescanner";
 import ProjectScanner from "./projectscanner";
 import { Node } from "./treedata";
+import { Logging } from "./logging";
 
 
 async function selectNoteDialog(context: vscode.ExtensionContext) {
@@ -81,11 +82,11 @@ export async function scanFolderAndSaveNotes(context: vscode.ExtensionContext) {
 
 export async function scanUrisAndSaveNotes(uris: Array<vscode.Uri>, context: vscode.ExtensionContext) {
     if (uris.length <= 0) {
-        // vscode.window.showInformationMessage("No path to scan.");
+        Logging.log("No path to scan");
         return;
     }
 
-    // vscode.window.showInformationMessage(`Scanning paths ${uris} for notes files.`);
+    Logging.log(`Scanning paths ${uris} for notes files.`);
 
     const noteFinder = new NoteScanner(uris);
 

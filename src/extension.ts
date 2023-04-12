@@ -3,13 +3,14 @@ import * as vscode from 'vscode';
 import NotesDB from './notesdb';
 import { importNoteToProject, clearDatabase, createNewProject, deleteNote, deleteProject, editProjectName, openNoteDialog, scanFolderAndSaveNotes, tryImportTextDocument } from './interaction';
 import { NotesTreeDataProvider, NotesTreeDragAndDropController } from './treedata';
+import { Logging } from './logging';
 
 
 export function activate(context: vscode.ExtensionContext) {
 	// Load the notes from the DB
 	const notesDB = NotesDB.getInstance(context.globalState);
 	notesDB.loadFromPersistantStorage();
-	console.log('"note-organizer" is active.');
+	Logging.log('Note Organizer is active.');
 
 	// Commands
 	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.scanFolderForNotes', async () => {

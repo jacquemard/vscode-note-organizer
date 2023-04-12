@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { ProgressDesc } from "./utils";
+import { Logging } from "./logging";
 
 interface FoundNote {
     rootPath: vscode.Uri;
@@ -13,6 +14,7 @@ export default class NoteScanner {
 
     private readonly noteFilenameRegex = new RegExp(/^.*note.*(\.md|\.txt)$/gis);
     private readonly maxRecursionDepth = 30;
+    private readonly maxDepthForLogging = 5;
 
     private _paths: Iterable<vscode.Uri> = [];
 
@@ -39,7 +41,7 @@ export default class NoteScanner {
         const [progress, token] = progressDesc || [null, null];
 
         token?.onCancellationRequested(() => {
-            console.log("User canceled searching notes");
+            Logging.log("User canceled searching notes");
         });
 
         const findInPath = async (filePath: vscode.Uri, depth: number) => {
@@ -52,6 +54,10 @@ export default class NoteScanner {
                 const fileStat = await vscode.workspace.fs.stat(filePath);
 
                 if (fileStat.type === vscode.FileType.Directory) {
+                    if (depth <= this.maxDepthForLogging) {
+                        Logging.log(`Scanning folder ${filePath.fsPath}`);
+                    }
+
                     // If the current path is a directory, recursively call findInPath for each subfile/directory
                     const dirFiles = await vscode.workspace.fs.readDirectory(filePath);
 
@@ -69,12 +75,12 @@ export default class NoteScanner {
 
                     if (this.isFilenameANote(fileName)) {
                         fileList.push(filePath);
-                        console.log(`Found note file at ${filePath.fsPath}`);
+                        Logging.log(`Found note file at ${filePath.fsPath}`);
                         progress?.report({ message: `Found note "${fileName}"` });
                     }
                 }
             } catch (error) {
-                console.log(error);
+                Logging.log(`Scanning error: ${error}`);
             }
 
             return fileList;

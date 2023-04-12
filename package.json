@@ -87,22 +87,22 @@
       "view/item/context": [
         {
           "command": "noteOrganizer.deleteProject",
-          "group": "inline",
+          "group": "inline@3",
           "when": "view == noteOrganizer && viewItem == project"
         },
         {
           "command": "noteOrganizer.editProjectName",
-          "group": "inline",
+          "group": "inline@2",
           "when": "view == noteOrganizer && viewItem == project"
         },
         {
           "command": "noteOrganizer.deleteNote",
-          "group": "inline",
+          "group": "inline@3",
           "when": "view == noteOrganizer && viewItem == note"
         },
         {
           "command": "noteOrganizer.importNoteToProject",
-          "group": "inline",
+          "group": "inline@1",
           "when": "view == noteOrganizer && viewItem == project"
         }
       ],
@@ -129,7 +129,7 @@
             "title": "Note File Regex",
             "description": "The regex used to filter file while scanning for notes. The filename should match the given regex to be considered a note file.",
             "type": "string",
-            "default": "^.*note.*(\\.md|\\.txt)$",
+            "default": "^(?!.*release).*note.*(\\.md|\\.txt)$",
             "minLength": 1
           },
           "noteOrganizer.projectInnerFileRegex": {

@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { ProgressDesc } from "./utils";
 import { dir } from "console";
+import { Logging } from "./logging";
 
 interface FoundProject {
     rootPath: vscode.Uri;
@@ -39,7 +40,7 @@ export default class ProjectScanner {
         const [progress, token] = progressDesc || [null, null];
 
         token?.onCancellationRequested(() => {
-            console.log("User canceled searching projects");
+            Logging.log("User canceled searching projects");
         });
 
         const findForPath = async (fileOrFolderPath: vscode.Uri): Promise<vscode.Uri | null> => {
@@ -58,7 +59,7 @@ export default class ProjectScanner {
 
                     // If current directory contains files or folders matching the regex (founding .vscode file), it's a project folder
                     if (dirFiles.filter(([filename, type]) => this.projectInnerFileRegex.test(filename)).length) {
-                        console.log(`Found project at ${fileOrFolderPath.fsPath}`);
+                        Logging.log(`Found project at ${fileOrFolderPath.fsPath}`);
                         progress?.report({ message: `Found project "${fileOrFolderPath.fsPath}"` });
                         return fileOrFolderPath;
                     }
@@ -66,7 +67,7 @@ export default class ProjectScanner {
 
                 const pathParts = fileOrFolderPath.path.split('/');
                 if (pathParts.filter(Boolean).length <= 1) {
-                    console.log(`No project found at ${fileOrFolderPath}`);
+                    Logging.log(`No project found at ${fileOrFolderPath}`);
                     // No more parent
                     return null;
                 }
@@ -77,7 +78,7 @@ export default class ProjectScanner {
                     path: parentParts.join("/"),
                 }));
             } catch (error) {
-                console.log(error);
+                Logging.log(`Scanning error: ${error}`);
                 return null;
             }
         };
