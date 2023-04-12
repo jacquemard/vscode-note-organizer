@@ -54,6 +54,10 @@ export function activate(context: vscode.ExtensionContext) {
 		dragAndDropController: new NotesTreeDragAndDropController(notesDB)
 	});
 
+	// Set context as a global as some tests depend on it
+	(global as any).testExtensionContext = context;
+
+	return context;
 }
 
 export function deactivate() { }

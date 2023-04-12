@@ -63,10 +63,6 @@ export default class NotesDB {
 
     private constructor(globalState: vscode.Memento) {
         this._globalState = globalState;
-
-        this.onDBUpdated(() => {
-            console.log("DB note updated");
-        });
     }
 
     public static getInstance(globalState: vscode.Memento) {
@@ -177,6 +173,8 @@ export default class NotesDB {
     public saveNote(note: Note) {
         this._notesDB.set(note.uri.toString(), note);
         this._onDBUpdated.fire(undefined);
+
+        return note;
     }
 
     /**
@@ -186,6 +184,8 @@ export default class NotesDB {
     public saveProject(project: Project) {
         this._projectsDB.set(project.projectID, project);
         this._onDBUpdated.fire(undefined);
+
+        return project;
     }
 
     public deleteProjectByID(projectID: string) {

@@ -47,40 +47,39 @@ export default class ProjectScanner {
                 return null;
             }
 
-            // Ensure path are constant
-            if (fileOrFolderPath.path.endsWith('/')) {
-                fileOrFolderPath = fileOrFolderPath.with({
-                    path: fileOrFolderPath.path.slice(0, fileOrFolderPath.path.length - 1)
-                });
-            }
+            try {
 
-            const fileStat = await vscode.workspace.fs.stat(fileOrFolderPath);
+                const fileStat = await vscode.workspace.fs.stat(fileOrFolderPath);
 
-            if (fileStat.type === vscode.FileType.Directory) {
-                // If the current path is a directory, check first if it is a project
+                if (fileStat.type === vscode.FileType.Directory) {
+                    // If the current path is a directory, check first if it is a project
 
-                const dirFiles = await vscode.workspace.fs.readDirectory(fileOrFolderPath);
+                    const dirFiles = await vscode.workspace.fs.readDirectory(fileOrFolderPath);
 
-                // If current directory contains files or folders matching the regex (founding .vscode file), it's a project folder
-                if (dirFiles.filter(([filename, type]) => this.projectInnerFileRegex.test(filename)).length) {
-                    console.log(`Found project at ${fileOrFolderPath.fsPath}`);
-                    progress?.report({ message: `Found project "${fileOrFolderPath.fsPath}"` });
-                    return fileOrFolderPath;
+                    // If current directory contains files or folders matching the regex (founding .vscode file), it's a project folder
+                    if (dirFiles.filter(([filename, type]) => this.projectInnerFileRegex.test(filename)).length) {
+                        console.log(`Found project at ${fileOrFolderPath.fsPath}`);
+                        progress?.report({ message: `Found project "${fileOrFolderPath.fsPath}"` });
+                        return fileOrFolderPath;
+                    }
                 }
-            }
 
-            const pathParts = fileOrFolderPath.path.split('/');
-            if (pathParts.filter(Boolean).length <= 1) {
-                console.log(`No project found at ${fileOrFolderPath}`);
-                // No more parent
+                const pathParts = fileOrFolderPath.path.split('/');
+                if (pathParts.filter(Boolean).length <= 1) {
+                    console.log(`No project found at ${fileOrFolderPath}`);
+                    // No more parent
+                    return null;
+                }
+
+                // If it is not a project folder, check the parent
+                const parentParts = pathParts.slice(0, pathParts.length - 1);
+                return findForPath(fileOrFolderPath.with({
+                    path: parentParts.join("/"),
+                }));
+            } catch (error) {
+                console.log(error);
                 return null;
             }
-
-            // If it is not a project folder, check the parent
-            const parentParts = pathParts.slice(0, pathParts.length - 1);
-            return findForPath(fileOrFolderPath.with({
-                path: parentParts.join("/"),
-            }));
         };
 
         progress?.report({

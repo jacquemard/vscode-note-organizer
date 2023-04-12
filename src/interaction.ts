@@ -81,11 +81,11 @@ export async function scanFolderAndSaveNotes(context: vscode.ExtensionContext) {
 
 export async function scanUrisAndSaveNotes(uris: Array<vscode.Uri>, context: vscode.ExtensionContext) {
     if (uris.length <= 0) {
-        vscode.window.showInformationMessage("No path to scan.");
+        // vscode.window.showInformationMessage("No path to scan.");
         return;
     }
 
-    vscode.window.showInformationMessage(`Scanning paths ${uris} for notes files.`);
+    // vscode.window.showInformationMessage(`Scanning paths ${uris} for notes files.`);
 
     const noteFinder = new NoteScanner(uris);
 

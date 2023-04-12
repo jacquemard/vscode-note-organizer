@@ -19,7 +19,6 @@ export default class NoteScanner {
     public constructor(paths?: Iterable<vscode.Uri>) {
         this.paths = paths || [];
 
-        console.log(vscode.workspace.getConfiguration("noteOrganizer"));
         this.noteFilenameRegex = new RegExp(vscode.workspace.getConfiguration("noteOrganizer").get('noteFileRegex', "^.*note.*(\.md|\.txt)$"), "gis");
     }
 
@@ -48,36 +47,34 @@ export default class NoteScanner {
                 return [];
             }
 
-            // Ensure path are constant
-            if (filePath.path.endsWith('/')) {
-                filePath = filePath.with({
-                    path: filePath.path.slice(0, filePath.path.length - 1)
-                });
-            }
-
             const fileList: Array<vscode.Uri> = [];
-            const fileStat = await vscode.workspace.fs.stat(filePath);
+            try {
+                const fileStat = await vscode.workspace.fs.stat(filePath);
 
-            if (fileStat.type === vscode.FileType.Directory) {
-                // If the current path is a directory, recursively call findInPath for each subfile/directory
-                const dirFiles = await vscode.workspace.fs.readDirectory(filePath);
+                if (fileStat.type === vscode.FileType.Directory) {
+                    // If the current path is a directory, recursively call findInPath for each subfile/directory
+                    const dirFiles = await vscode.workspace.fs.readDirectory(filePath);
 
-                await Promise.all(dirFiles.map(async (subPathDesc) => {
-                    const subFilePath = subPathDesc[0];
-                    const subPathUri = vscode.Uri.joinPath(filePath, subFilePath);
+                    await Promise.all(dirFiles.map(async (subPathDesc) => {
+                        const subFilePath = subPathDesc[0];
+                        const subPathUri = vscode.Uri.joinPath(filePath, subFilePath);
 
-                    fileList.push(...await findInPath(subPathUri, depth + 1));
-                }));
-            } else {
-                // If the current path is a file, unknown or symlink, check its format.
-                const filePathParts = filePath.path.split('/');
-                const fileName = filePathParts[filePathParts.length - 1];
+                        fileList.push(...await findInPath(subPathUri, depth + 1));
+                    }));
 
-                if (this.isFilenameANote(fileName)) {
-                    fileList.push(filePath);
-                    console.log(`Found note file at ${filePath.fsPath}`);
-                    progress?.report({ message: `Found note "${fileName}"` });
+                } else {
+                    // If the current path is a file, unknown or symlink, check its format.
+                    const filePathParts = filePath.path.split('/');
+                    const fileName = filePathParts[filePathParts.length - 1];
+
+                    if (this.isFilenameANote(fileName)) {
+                        fileList.push(filePath);
+                        console.log(`Found note file at ${filePath.fsPath}`);
+                        progress?.report({ message: `Found note "${fileName}"` });
+                    }
                 }
+            } catch (error) {
+                console.log(error);
             }
 
             return fileList;
