@@ -20,7 +20,7 @@ export default class ProjectScanner {
     public constructor(paths?: Iterable<vscode.Uri>) {
         this.paths = paths || [];
 
-        this.projectInnerFileRegex = new RegExp(vscode.workspace.getConfiguration("noteOrganizer").get('projectInnerFileRegex', "^.vscode$"), "gis");
+        this.projectInnerFileRegex = new RegExp(vscode.workspace.getConfiguration("noteOrganizer").get('projectInnerFileRegex', "^.vscode$"), "is");
     }
 
     public set paths(paths: Iterable<vscode.Uri>) {

@@ -12,16 +12,19 @@ interface FoundNote {
  */
 export default class NoteScanner {
 
-    private readonly noteFilenameRegex = new RegExp(/^.*note.*(\.md|\.txt)$/gis);
-    private readonly maxRecursionDepth = 30;
-    private readonly maxDepthForLogging = 5;
+    private readonly noteFilenameRegex;
+    private readonly scanFolderRegex;
+    private readonly maxRecursionDepth;
+    private readonly maxDepthForLogging = 3;
 
     private _paths: Iterable<vscode.Uri> = [];
 
     public constructor(paths?: Iterable<vscode.Uri>) {
         this.paths = paths || [];
 
-        this.noteFilenameRegex = new RegExp(vscode.workspace.getConfiguration("noteOrganizer").get('noteFileRegex', "^.*note.*(\.md|\.txt)$"), "gis");
+        this.noteFilenameRegex = new RegExp(vscode.workspace.getConfiguration("noteOrganizer").get('noteFileRegex', ".*"), "is");
+        this.scanFolderRegex = new RegExp(vscode.workspace.getConfiguration("noteOrganizer").get('folderScanRegex', "^.*$"), "is");
+        this.maxRecursionDepth = parseInt(vscode.workspace.getConfiguration("noteOrganizer").get('maxRecursionDepth', "15"));
     }
 
     public set paths(paths: Iterable<vscode.Uri>) {
@@ -61,9 +64,13 @@ export default class NoteScanner {
                     // If the current path is a directory, recursively call findInPath for each subfile/directory
                     const dirFiles = await vscode.workspace.fs.readDirectory(filePath);
 
-                    await Promise.all(dirFiles.map(async (subPathDesc) => {
-                        const subFilePath = subPathDesc[0];
+                    await Promise.all(dirFiles.map(async ([subFilePath, type]) => {
                         const subPathUri = vscode.Uri.joinPath(filePath, subFilePath);
+
+                        if (type === vscode.FileType.Directory && !this.scanFolderRegex.test(subFilePath)) {  // Check if this sub folder should be checked
+                            Logging.log(`Skipping ${subPathUri} folder as it did not match the regex`);
+                            return;
+                        }
 
                         fileList.push(...await findInPath(subPathUri, depth + 1));
                     }));

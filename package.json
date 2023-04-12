@@ -138,6 +138,19 @@
             "type": "string",
             "default": "^.vscode$",
             "minLength": 1
+          },
+          "noteOrganizer.folderScanRegex": {
+            "title": "Folder scan regex",
+            "markdownDescription": "The regex used to find out if a given folder should be scan while scanning for notes. For a given folder `/a/b/`, `b` would be scan only if `b` match this regex. By default, no filtering.",
+            "type": "string",
+            "default": "^.*$",
+            "minLength": 1
+          },
+          "noteOrganizer.maxRecursionDepth": {
+            "title": "Folder scan max depth",
+            "markdownDescription": "The maximum depth we should scan.",
+            "type": "integer",
+            "default": 15
           }
         }
       }
