@@ -18,7 +18,7 @@
     "commands": [
       {
         "command": "noteOrganizer.scanFolderForNotes",
-        "title": "Scan folder for new notes",
+        "title": "Scan folder for notes to import",
         "category": "Note Organizer"
       },
       {
@@ -39,10 +39,17 @@
         "icon": "$(new-folder)"
       },
       {
-        "command": "noteOrganizer.deleteProject",
-        "title": "Delete project",
+        "command": "noteOrganizer.scanFolderForNotes",
+        "title": "Scan folder for note",
         "category": "Note Organizer",
-        "icon": "$(trash)"
+        "shortTitle": "Scan folder",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "noteOrganizer.deleteProject",
+        "title": "Remove project",
+        "category": "Note Organizer",
+        "icon": "$(remove)"
       },
       {
         "command": "noteOrganizer.editProjectName",
@@ -51,10 +58,28 @@
         "icon": "$(pencil)"
       },
       {
-        "command": "noteOrganizer.deleteNote",
-        "title": "Delete note",
+        "command": "noteOrganizer.removeNote",
+        "title": "Remove note",
+        "category": "Note Organizer",
+        "icon": "$(remove)"
+      },
+      {
+        "command": "noteOrganizer.renameNote",
+        "title": "Rename note",
+        "category": "Note Organizer",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "noteOrganizer.deleteNoteFromDisk",
+        "title": "Delete note from disk",
         "category": "Note Organizer",
         "icon": "$(trash)"
+      },
+      {
+        "command": "noteOrganizer.importNoteToProject",
+        "title": "Import existing note",
+        "category": "Note Organizer",
+        "icon": "$(go-to-file)"
       },
       {
         "command": "noteOrganizer.importNoteToProject",
@@ -82,6 +107,14 @@
           "command": "noteOrganizer.importNoteToProject",
           "group": "navigation",
           "when": "view == noteOrganizer"
+        },
+        {
+          "command": "noteOrganizer.openNote",
+          "when": "view == noteOrganizer"
+        },
+        {
+          "command": "noteOrganizer.scanFolderForNotes",
+          "when": "view == noteOrganizer"
         }
       ],
       "view/item/context": [
@@ -96,8 +129,18 @@
           "when": "view == noteOrganizer && viewItem == project"
         },
         {
-          "command": "noteOrganizer.deleteNote",
+          "command": "noteOrganizer.removeNote",
+          "group": "inline@4",
+          "when": "view == noteOrganizer && viewItem == note"
+        },
+        {
+          "command": "noteOrganizer.renameNote",
           "group": "inline@3",
+          "when": "view == noteOrganizer && viewItem == note"
+        },
+        {
+          "command": "noteOrganizer.deleteNoteFromDisk",
+          "group": "inline@2",
           "when": "view == noteOrganizer && viewItem == note"
         },
         {
@@ -116,7 +159,15 @@
           "when": "false"
         },
         {
-          "command": "noteOrganizer.deleteNote",
+          "command": "noteOrganizer.removeNote",
+          "when": "false"
+        },
+        {
+          "command": "noteOrganizer.renameNote",
+          "when": "false"
+        },
+        {
+          "command": "noteOrganizer.deleteNoteFromDisk",
           "when": "false"
         }
       ]

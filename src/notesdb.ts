@@ -258,6 +258,10 @@ export default class NotesDB {
         this._onDBUpdated.fire(undefined);
     }
 
+    public triggerChanged() {
+        this._onDBUpdated.fire(undefined);
+    }
+
     private serializeMap(val: Map<any, any>) {
         return Array.from(val.entries());
     }

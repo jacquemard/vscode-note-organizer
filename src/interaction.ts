@@ -235,7 +235,7 @@ export async function editProjectName(node: Node, context: vscode.ExtensionConte
     notesDB.persistDB();
 }
 
-export async function deleteNote(node: Node, context: vscode.ExtensionContext) {
+export async function removeNote(node: Node, context: vscode.ExtensionContext) {
     if (!(node.data instanceof Note)) {
         return;
     }
@@ -243,6 +243,57 @@ export async function deleteNote(node: Node, context: vscode.ExtensionContext) {
     const notesDB = NotesDB.getInstance(context.globalState);
     notesDB.deleteNoteByURI(node.data.uri);
     notesDB.persistDB();
+}
+
+export async function deleteNoteFromDisk(node: Node, context: vscode.ExtensionContext) {
+    if (!(node.data instanceof Note)) {
+        return;
+    }
+
+    const selected = await vscode.window.showWarningMessage("Are you sure you want to delete this note? It will be removed from the disk.", {
+        title: "Yes",
+        value: "confirmed",
+    }, {
+        title: "Cancel"
+    },);
+
+    if (selected && selected.value === "confirmed") {
+        removeNote(node, context);
+        vscode.workspace.fs.delete(node.data.uri);
+    }
+
+}
+
+export async function renameNote(node: Node, context: vscode.ExtensionContext) {
+    if (!(node.data instanceof Note)) {
+        return;
+    }
+
+    const filePathParts = node.data.uri.path.split('/');
+    const fileName = filePathParts[filePathParts.length - 1];
+
+    const newName = await vscode.window.showInputBox({
+        title: "Please enter the note new name",
+        placeHolder: "New Note Name",
+        value: fileName,
+    });
+
+    if (newName) {
+        const parentPath = node.data.uri.with({
+            path: filePathParts.slice(0, filePathParts.length - 1).join("/")
+        });
+        const newUri = vscode.Uri.joinPath(parentPath, newName);
+
+        // Rename on disk
+        vscode.workspace.fs.rename(node.data.uri, newUri);
+
+        // Rename on DB
+        const notesDB = NotesDB.getInstance(context.globalState);
+        node.data.uri = newUri;
+        notesDB.persistDB();
+        notesDB.triggerChanged();
+    }
+
 }
 
 

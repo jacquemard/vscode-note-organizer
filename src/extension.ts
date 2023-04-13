@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import NotesDB from './notesdb';
-import { importNoteToProject, clearDatabase, createNewProject, deleteNote, deleteProject, editProjectName, openNoteDialog, scanFolderAndSaveNotes, tryImportTextDocument } from './interaction';
+import { importNoteToProject, clearDatabase, createNewProject, removeNote, deleteProject, editProjectName, openNoteDialog, scanFolderAndSaveNotes, tryImportTextDocument, deleteNoteFromDisk, renameNote } from './interaction';
 import { NotesTreeDataProvider, NotesTreeDragAndDropController } from './treedata';
 import { Logging } from './logging';
 
@@ -34,8 +34,14 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.editProjectName', async (node) => {
 		editProjectName(node, context);
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.deleteNote', async (node) => {
-		deleteNote(node, context);
+	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.renameNote', async (node) => {
+		renameNote(node, context);
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.removeNote', async (node) => {
+		removeNote(node, context);
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.deleteNoteFromDisk', async (node) => {
+		deleteNoteFromDisk(node, context);
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.importNoteToProject', async (node) => {
 		importNoteToProject(node, context);
