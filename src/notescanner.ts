@@ -2,6 +2,9 @@ import * as vscode from "vscode";
 import { ProgressDesc } from "./utils";
 import { Logging } from "./logging";
 
+import * as plimit from "p-limit";
+import pLimit = require("p-limit");
+
 interface FoundNote {
     rootPath: vscode.Uri;
     noteFilesPaths: Array<vscode.Uri>;
@@ -15,16 +18,22 @@ export default class NoteScanner {
     private readonly noteFilenameRegex;
     private readonly scanFolderRegex;
     private readonly maxRecursionDepth;
+    private readonly maxConcurrency;
     private readonly maxDepthForLogging = 3;
+    // private readonly recursionPLimit;
 
     private _paths: Iterable<vscode.Uri> = [];
 
     public constructor(paths?: Iterable<vscode.Uri>) {
         this.paths = paths || [];
 
-        this.noteFilenameRegex = new RegExp(vscode.workspace.getConfiguration("noteOrganizer").get('noteFileRegex', ".*"), "is");
-        this.scanFolderRegex = new RegExp(vscode.workspace.getConfiguration("noteOrganizer").get('folderScanRegex', "^.*$"), "is");
-        this.maxRecursionDepth = parseInt(vscode.workspace.getConfiguration("noteOrganizer").get('maxRecursionDepth', "15"));
+        const conf = vscode.workspace.getConfiguration("noteOrganizer");
+
+        this.noteFilenameRegex = new RegExp(conf.get<string>('noteFileRegex', ".*"), "is");
+        this.scanFolderRegex = new RegExp(conf.get<string>('folderScanRegex', "^.*$"), "is");
+        this.maxRecursionDepth = conf.get<number>('maxRecursionDepth', 15);
+        this.maxConcurrency = conf.get<number>('scanConcurrency', 20);
+        // this.recursionPLimit = pLimit(this.maxConcurrency);
     }
 
     public set paths(paths: Iterable<vscode.Uri>) {
@@ -47,7 +56,9 @@ export default class NoteScanner {
             Logging.log("User canceled searching notes");
         });
 
-        const findInPath = async (filePath: vscode.Uri, depth: number) => {
+        let activeConcurrency = 0;
+
+        const findInPath = async (filePath: vscode.Uri, depth: number): Promise<Array<vscode.Uri>> => {
             if (depth > this.maxRecursionDepth || token?.isCancellationRequested) {
                 return [];
             }
@@ -64,16 +75,32 @@ export default class NoteScanner {
                     // If the current path is a directory, recursively call findInPath for each subfile/directory
                     const dirFiles = await vscode.workspace.fs.readDirectory(filePath);
 
-                    await Promise.all(dirFiles.map(async ([subFilePath, type]) => {
+                    // Let's do it for sub folders synchronously when we are at the max concurrent job.
+
+                    const checkSubFiles = async  ([subFilePath, type]:[string, vscode.FileType]) => {
                         const subPathUri = vscode.Uri.joinPath(filePath, subFilePath);
 
                         if (type === vscode.FileType.Directory && !this.scanFolderRegex.test(subFilePath)) {  // Check if this sub folder should be checked
                             Logging.log(`Skipping ${subPathUri} folder as it did not match the regex`);
-                            return;
+                            return [];
                         }
 
-                        fileList.push(...await findInPath(subPathUri, depth + 1));
-                    }));
+                        let subFiles = await findInPath(subPathUri, depth + 1);
+
+                        fileList.push(...subFiles);
+                    };
+
+                    if (activeConcurrency >= this.maxConcurrency) {
+                        for (let [subFilePath, type] of dirFiles) {
+                            await checkSubFiles([subFilePath, type]);
+                        }
+                    } else {
+                        await Promise.all(dirFiles.map(async ([subFilePath, type]) => {
+                            activeConcurrency++;
+                            await checkSubFiles([subFilePath, type]);
+                            activeConcurrency--;
+                        }));
+                    }
 
                 } else {
                     // If the current path is a file, unknown or symlink, check its format.
