@@ -17,11 +17,6 @@
   "contributes": {
     "commands": [
       {
-        "command": "noteOrganizer.scanFolderForNotes",
-        "title": "Scan folder for notes to import",
-        "category": "Note Organizer"
-      },
-      {
         "command": "noteOrganizer.openNote",
         "title": "Open note",
         "category": "Note Organizer"
@@ -40,7 +35,7 @@
       },
       {
         "command": "noteOrganizer.scanFolderForNotes",
-        "title": "Scan folder for note",
+        "title": "Scan folder for note to import",
         "category": "Note Organizer",
         "shortTitle": "Scan folder",
         "icon": "$(new-folder)"
@@ -74,12 +69,6 @@
         "title": "Delete note from disk",
         "category": "Note Organizer",
         "icon": "$(trash)"
-      },
-      {
-        "command": "noteOrganizer.importNoteToProject",
-        "title": "Import existing note",
-        "category": "Note Organizer",
-        "icon": "$(go-to-file)"
       },
       {
         "command": "noteOrganizer.importNoteToProject",
