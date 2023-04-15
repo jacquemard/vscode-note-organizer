@@ -18,6 +18,7 @@ suite('DB Test Suite', () => {
 
     test("Store basic functions should work", () => {
         const notesDB = Database.getInstance(extensionContext.globalState);
+        notesDB.clear();
 
         const projs: ProjectEntity[] = [{
             id: 1,
@@ -35,8 +36,8 @@ suite('DB Test Suite', () => {
         }];
 
         // Load everything in the database
-        notesDB.notes.addAll(notes);
-        notesDB.projects.addAll(projs);
+        notesDB.notes.addOrUpdateAll(notes);
+        notesDB.projects.addOrUpdateAll(projs);
 
         // Should have been persisted, lets load from storage to test that
         notesDB.load();
@@ -46,15 +47,62 @@ suite('DB Test Suite', () => {
 
         // Let ensure everything's right
         assert.equal(notesDB.notes.getAll()[0].id, 1);
-        assert.equal(notesDB.notes.getAll()[0].uri.fsPath, "c:\\test.md");
+        assert.equal(notesDB.notes.getAll()[0].uri.path, "/c:/test.md");
         assert.equal(notesDB.notes.getAll()[0].projectId, undefined);
 
         assert.equal(notesDB.projects.getAll()[0].id, 1);
-        assert.equal(notesDB.projects.getAll()[0].uri.fsPath, "c:\\");
+        assert.equal(notesDB.projects.getAll()[0].uri.path, "/c:/");
 
         assert.equal(notesDB.notes.getAll()[1].id, 2);
-        assert.equal(notesDB.notes.getAll()[1].uri.fsPath, "c:\\test2.md");
+        assert.equal(notesDB.notes.getAll()[1].uri.path, "/c:/test2.md");
         assert.equal(notesDB.notes.getAll()[1].projectId, 1);
+
+    });
+
+    test("Store update should work", () => {
+        const notesDB = Database.getInstance(extensionContext.globalState);
+        notesDB.clear();
+
+        const proj: ProjectEntity = {
+            id: 1,
+            uri: vscode.Uri.file("c:/"),
+            name: "My name",
+        };
+
+        const note: NoteEntity = {
+            id: 1,
+            uri: vscode.Uri.file("c:/test.md")
+        };
+
+        // Load everything in the database
+        notesDB.notes.addOrUpdate(note);
+        notesDB.projects.addOrUpdate(proj);
+
+        // Should have been persisted, lets load from storage to test that
+        notesDB.load();
+
+        assert.equal(notesDB.notes.getAll().length, 1);
+        assert.equal(notesDB.projects.getAll().length, 1);
+
+        // Let update things by id
+        notesDB.notes.addOrUpdate({
+            id: 1,
+            uri: vscode.Uri.file("c:/testnew.md"),
+        });
+        notesDB.projects.addOrUpdate({
+            id: 1,
+            name: "new Name",
+            uri: vscode.Uri.file("c:/subfolder"),
+        });
+
+        // Check db content
+        assert.equal(notesDB.notes.getAll().length, 1);
+        assert.equal(notesDB.projects.getAll().length, 1);
+
+        assert.equal(notesDB.notes.getAll()[0].uri.path, "/c:/testnew.md");
+
+        assert.equal(notesDB.projects.getAll()[0].uri.path, "/c:/subfolder");
+        assert.equal(notesDB.projects.getAll()[0].name, "new Name");
 
     });
 

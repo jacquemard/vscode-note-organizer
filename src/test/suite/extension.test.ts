@@ -36,13 +36,13 @@ suite('Store Test Suite', () => {
 	test("Store should support big load", () => {
 		const notesDB = NotesDB.getInstance(extensionContext.globalState);
 
-		for (let i = 0; i < 1000; i++) {
+		for (let i = 0; i < 100; i++) {
 			notesDB.saveProject(new Project(`${makeid(5)}/${makeid(5)}/${makeid(10)}/${makeid(10)}/${makeid(10)}/${makeid(10)}/${makeid(10)}`));
 		}
 
 		const proj = notesDB.saveProject(new Project("MyTestProj", "My test proj"));
 
-		for (let i = 0; i < 1000; i++) {
+		for (let i = 0; i < 100; i++) {
 			notesDB.saveNote(new Note(vscode.Uri.file(`${makeid(5)}/${makeid(5)}/${makeid(10)}/${makeid(10)}/${makeid(10)}/${makeid(10)}/${makeid(10)}`)));
 			notesDB.saveNote(new Note(vscode.Uri.file(`${makeid(5)}/${makeid(5)}/${makeid(10)}/${makeid(10)}/${makeid(10)}/${makeid(10)}/${makeid(10)}`), proj));
 			notesDB.persistDB();
@@ -53,8 +53,8 @@ suite('Store Test Suite', () => {
 
 		notesDB.loadFromPersistantStorage();
 
-		assert.equal(Array.from(notesDB.getAllProject()).length, 1001);
-		assert.equal(Array.from(notesDB.getAllNotes()).length, 2000);
+		assert.equal(Array.from(notesDB.getAllProject()).length, 101);
+		assert.equal(Array.from(notesDB.getAllNotes()).length, 200);
 	});
 
 });

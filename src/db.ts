@@ -6,14 +6,16 @@ interface Serializer<In, Out> {
 }
 
 // Entities -----
-export interface ProjectEntity {
-    id: number;
+export interface IDEntity {
+    id: number,
+}
+
+export interface ProjectEntity extends IDEntity {
     uri: vscode.Uri;
     name?: string;
 }
 
-export interface NoteEntity {
-    id: number;
+export interface NoteEntity extends IDEntity {
     projectId?: number;
     uri: vscode.Uri;
 }
@@ -67,7 +69,7 @@ class NoteEntitySerializer implements Serializer<NoteEntity, SerializedNote> {
 }
 
 // Database
-class EntityManager<T> {
+class EntityManager<T extends IDEntity> {
     private _db: Set<T>;
     constructor(db: Set<T>) {
         this._db = db;
@@ -75,15 +77,35 @@ class EntityManager<T> {
 
     public getAll = () => Array.from(this._db.values());
 
-    public add(object: T) {
+    /**
+     * Update or add the given object. Update if ID exists.
+     * @param object
+     */
+    public addOrUpdate(object: T) {
+        const existingObj = this.getById(object.id);
+        if (existingObj) {
+            this._db.delete(existingObj);
+        }
+
         this._db.add(object);
         this._updatedEmitter.fire(undefined);
     };
 
-    public addAll(objects: T[]) {
-        objects.forEach(obj => this._db.add(obj));
+    public addOrUpdateAll(objects: T[]) {
+        objects.forEach(obj => {
+            const existingObj = this.getById(obj.id);
+            if (existingObj) {
+                this._db.delete(existingObj);
+            }
+
+            this._db.add(obj);
+        });
         this._updatedEmitter.fire(undefined);
     };
+
+    public getById(id: number): T | undefined {
+        return this.getAll().find(obj => obj.id === id);
+    }
 
     public clear = () => {
         this._db.clear();
@@ -186,6 +208,11 @@ export class Database {
     public load() {
         this.loadProjects();
         this.loadNotes();
+    }
+
+    public clear() {
+        this.notes.clear();
+        this.projects.clear();
     }
 
 
