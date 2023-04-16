@@ -18,6 +18,7 @@
     "name": "Rémi Jacquemard",
     "url": "https://jacquemard.ch"
   },
+  "license": "MIT",
   "repository": {
     "type": "git",
     "directory": "https://github.com/jacquemard/vscode-note-organizer.git"
