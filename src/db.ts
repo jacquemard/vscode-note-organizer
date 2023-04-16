@@ -69,7 +69,7 @@ class NoteEntitySerializer implements Serializer<NoteEntity, SerializedNote> {
 }
 
 // Database
-class EntityManager<T extends IDEntity> {
+export class EntityManager<T extends IDEntity> {
     private _db: Set<T>;
     constructor(db: Set<T>) {
         this._db = db;
@@ -215,33 +215,4 @@ export class Database {
         this.projects.clear();
     }
 
-
 }
-
-// --- Models
-
-class Project {
-    id: number;
-    uri: vscode.Uri;
-    name?: string;
-
-    constructor(id: number, uri: vscode.Uri, name?: string) {
-        this.id = id;
-        this.uri = uri;
-        this.name = name;
-    }
-}
-
-class Note {
-    id: number;
-    uri: vscode.Uri;
-    project?: Project;
-
-    constructor(id: number, uri: vscode.Uri, project?: Project) {
-        this.id = id;
-        this.uri = uri;
-        this.project = project;
-    }
-}
-
-// Testing
