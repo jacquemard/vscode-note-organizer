@@ -13,6 +13,19 @@
   "activationEvents": [
     "onFileSystem:file"
   ],
+  "author": {
+    "email": "remi@jacquemard.ch",
+    "name": "Rémi Jacquemard",
+    "url": "https://jacquemard.ch"
+  },
+  "repository": {
+    "type": "git",
+    "directory": "https://github.com/jacquemard/vscode-note-organizer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jacquemard/vscode-note-organizer/issues"
+  },
+  "icon": "resources/icons/logo.png",
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
