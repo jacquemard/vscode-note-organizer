@@ -133,6 +133,9 @@ export class NoteService {
     private static _instance: NoteService;
     private _db: Database;
 
+    private _onUpdated: vscode.EventEmitter<undefined> = new vscode.EventEmitter<undefined>();
+    readonly onUpdated: vscode.Event<undefined> = this._onUpdated.event;
+
     private projects!: Set<Project>;
     private notes!: Set<Note>;
 
@@ -152,16 +155,19 @@ export class NoteService {
         Project.onUpdated((proj) => {
             const projEntity = new ProjectEntityModel(this).modelToEntity(proj);
             this._db.projects.addOrUpdate(projEntity);
+
+            this._onUpdated.fire(undefined);
         });
         Note.onUpdated((note) => {
             const noteEntity = new NoteEntityModel(this).modelToEntity(note);
             this._db.notes.addOrUpdate(noteEntity);
+
+            this._onUpdated.fire(undefined);
         });
     }
 
     private _loadFromDB() {
         this.projects = new Set(this._db.projects.getAll().map(projectEntity => new ProjectEntityModel(this).entityToModel(projectEntity)));
-
         this.notes = new Set(this._db.notes.getAll().map(noteEntity => new NoteEntityModel(this).entityToModel(noteEntity)));
     }
 
@@ -180,6 +186,8 @@ export class NoteService {
         const proj = new Project(lastIndex + 1, uri, name);
         this.projects.add(proj);
 
+        // Event triggered in project constructor
+
         return proj;
     }
 
@@ -190,7 +198,43 @@ export class NoteService {
         const note = new Note(lastIndex + 1, uri, project);
         this.notes.add(note);
 
+        // Event triggered in note constructor
+
         return note;
     }
+
+    public removeProject(project: Project) {
+        this.projects.delete(project);
+        this._db.projects.remove(new ProjectEntityModel(this).modelToEntity(project));
+
+        this._onUpdated.fire(undefined);
+    }
+
+    public removeNote(note: Note) {
+        this.notes.delete(note);
+        this._db.notes.remove(new NoteEntityModel(this).modelToEntity(note));
+
+        this._onUpdated.fire(undefined);
+    }
+
+    public clearProjects() {
+        this.projects.clear();
+        this._db.projects.clear();
+
+        this._onUpdated.fire(undefined);
+    }
+
+    public clearNotes() {
+        this.notes.clear();
+        this._db.notes.clear();
+
+        this._onUpdated.fire(undefined);
+    }
+
+    clear() {
+        this.clearNotes();
+        this.clearProjects();
+    }
+
 
 }

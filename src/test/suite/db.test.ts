@@ -104,6 +104,16 @@ suite('DB Test Suite', () => {
         assert.equal(notesDB.projects.getAll()[0].uri.path, "/c:/subfolder");
         assert.equal(notesDB.projects.getAll()[0].name, "new Name");
 
+        // Test remove
+        notesDB.notes.remove(note);
+        notesDB.projects.remove(proj);
+
+        notesDB.load();
+
+        assert.equal(notesDB.notes.getAll().length, 0);
+        assert.equal(notesDB.projects.getAll().length, 0);
+
+
     });
 
 });

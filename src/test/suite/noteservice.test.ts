@@ -19,9 +19,8 @@ suite('Note Service Test Suite', () => {
 
     test("Adding note and projects should work", () => {
         const db = Database.getInstance(extensionContext.globalState);
-        db.clear();
-
         const notesService = NoteService.getInstance(db);
+        notesService.clear();
 
         // Testing projects
         const proj1 = notesService.newProject(vscode.Uri.file("c:/"));

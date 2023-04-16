@@ -113,8 +113,12 @@ export class EntityManager<T extends IDEntity> {
     };
 
     public remove = (object: T) => {
-        this._db.delete(object);
-        this._updatedEmitter.fire(undefined);
+        const existingObj = this.getById(object.id);
+
+        if (existingObj) {
+            this._db.delete(existingObj);
+            this._updatedEmitter.fire(undefined);
+        }
     };
 
     // Events
