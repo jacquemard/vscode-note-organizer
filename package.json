@@ -1,13 +1,18 @@
 {
   "name": "note-organizer",
   "displayName": "Note Organizer",
-  "description": "Organize your Markdown and text file notes accross all of your project, in a single place.",
+  "description": "Organize your Markdown and text file notes across all of your project, in a single place.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.77.0"
   },
   "categories": [
     "Other"
+  ],
+  "keywords": [
+    "note",
+    "organize",
+    "centralize"
   ],
   "publisher": "RemiJacquemard",
   "activationEvents": [
@@ -21,12 +26,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "directory": "https://github.com/jacquemard/vscode-note-organizer.git"
+    "url": "https://github.com/jacquemard/vscode-note-organizer.git"
   },
   "bugs": {
     "url": "https://github.com/jacquemard/vscode-note-organizer/issues"
   },
-  "icon": "resources/icons/logo.png",
+  "icon": "./resources/icons/logo.png",
   "main": "./out/extension.js",
   "contributes": {
     "commands": [

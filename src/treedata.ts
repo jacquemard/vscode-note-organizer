@@ -100,16 +100,22 @@ export class NotesTreeDragAndDropController implements vscode.TreeDragAndDropCon
         }
 
         // Update service
-        sourceNotes.forEach(sourceNote => {
+        sourceNotes.forEach(async sourceNote => {
             // Also physically move it if there is a project
 
             if (project) {
                 const newFilePath = vscode.Uri.joinPath(project.uri, getFileName(sourceNote.uri));
-                vscode.workspace.fs.rename(sourceNote.uri, newFilePath);
-                sourceNote.uri = newFilePath;
+                try {
+                    await vscode.workspace.fs.rename(sourceNote.uri, newFilePath);
+                    sourceNote.uri = newFilePath;
+                    sourceNote.project = project;
+                } catch (error) {
+                    vscode.window.showWarningMessage(`Error while renaming note: ${error}`);
+                }
+            } else {
+                sourceNote.project = project;
             }
 
-            sourceNote.project = project;
         });
 
     }

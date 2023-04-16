@@ -1,71 +1,39 @@
 # note-organizer README
 
-This is the README for your extension "note-organizer". After writing up a brief description, we recommend including the following sections.
+Quickly find your already existing Markdown and text file notes across all of your project. Easily organize and create new notes.
+
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Scan your computer and automatically find note files.
 
-For example if there is an image subfolder under your extension project workspace:
+![Scanning](./resources/docimages/scanning.gif)
 
-\!\[feature X\]\(images/feature-x.png\)
+Quickly open your note file.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+![Quick open](./resources/docimages/quickopen.gif)
 
-## Requirements
+Move, rename, create or delete your notes easily.
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+![Organize](./resources/docimages/organize.gif)
+
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
 This extension contributes the following settings:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+* `noteOrganizer.noteFileRegex`: The regex used to filter file while scanning for notes. The filename should match the given regex to be considered a note file.
+* `noteOrganizer.projectInnerFileRegex`: The regex used to find out if a given folder should be considered as a project while scanning for notes. For a given folder `/a/b/`, `b` would be considered a project if any of its sub file and folder match this regex. By default, filter on `.vscode` files.
+* `noteOrganizer.folderScanRegex`: The regex used to find out if a given folder should be scan while scanning for notes. For a given folder `/a/b/`, `b` would be scan only if `b` match this regex. By default, no filtering.
+* `noteOrganizer.maxRecursionDepth`: The maximum depth we should scan.
+* `noteOrganizer.scanConcurrency`: The maximum concurrency while scanning for notes.
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+See https://github.com/jacquemard/vscode-note-organizer/issues for issues and bug reports.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+### 0.0.1
 
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+Initial pre-release
