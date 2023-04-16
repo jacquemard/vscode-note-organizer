@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { Database, EntityManager, NoteEntity, ProjectEntity } from "./db";
+import { getFileName } from "./utils";
 
 // --- Models
 
@@ -9,6 +10,7 @@ export class Project {
         return this._id;
     }
     public set id(value: number) {
+        // TODO: maybe remove setter ?
         this._id = value;
         Project._onUpdated.fire(this);
     }
@@ -31,14 +33,16 @@ export class Project {
         Project._onUpdated.fire(this);
     }
 
-    // TODO: event listener (maybe static) + setter and getter ?, listen in Service ?
-
     constructor(id: number, uri: vscode.Uri, name?: string) {
         this._id = id;
         this._uri = uri;
         this._name = name;
 
         Project._onUpdated.fire(this);
+    }
+
+    public getDisplayName() {
+        return this.name || getFileName(this.uri);
     }
 
     private static _onUpdated: vscode.EventEmitter<Project> = new vscode.EventEmitter<Project>();
@@ -51,6 +55,8 @@ export class Note {
         return this._id;
     }
     public set id(value: number) {
+        // TODO: maybe remove setter ?
+
         this._id = value;
         Note._onUpdated.fire(this);
     }
@@ -77,6 +83,10 @@ export class Note {
         this._project = project;
 
         Note._onUpdated.fire(this);
+    }
+
+    public getFileName() {
+        return getFileName(this.uri);
     }
 
     private static _onUpdated: vscode.EventEmitter<Note> = new vscode.EventEmitter<Note>();

@@ -1,17 +1,18 @@
 import * as vscode from 'vscode';
-import NotesDB, { Project, Note } from './notesdb';
+import { NoteService, Project, Note } from './noteservice';
+import { getFileName } from './utils';
 
 
 export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
-    private _notesDB: NotesDB;
+    private _notesService: NoteService;
 
     // Event
     private _onDidChangeTreeData: vscode.EventEmitter<any> = new vscode.EventEmitter<any>();
     readonly onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
 
-    constructor(notesDB: NotesDB) {
-        this._notesDB = notesDB;
-        notesDB.onDBUpdated(() => this._onDidChangeTreeData.fire(undefined));
+    constructor(notesService: NoteService) {
+        this._notesService = notesService;
+        notesService.onUpdated(() => this._onDidChangeTreeData.fire(undefined));
     }
 
     getTreeItem(element: Node): vscode.TreeItem | Thenable<vscode.TreeItem> {
@@ -27,7 +28,7 @@ export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
     getChildren(element?: Node | undefined): vscode.ProviderResult<Node[]> {
         if (!element) {
             // Called for the root element
-            const projects = Array.from(this._notesDB.getAllProject()).filter(project => project !== Project.unknownProject).map(project => {
+            const projects = Array.from(this._notesService.getAllProjects()).map(project => {
                 return {
                     type: NodeType.project,
                     data: project
@@ -35,7 +36,7 @@ export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
             });
 
             // Also include unknown project notes
-            const unknownProjectNotes = Array.from(this._notesDB.getAllNotes()).filter(note => note.project === Project.unknownProject).map(note => {
+            const unknownProjectNotes = Array.from(this._notesService.getAllNotes()).filter(note => !note.project).map(note => {
                 return {
                     type: NodeType.note,
                     data: note,
@@ -46,7 +47,7 @@ export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
 
         } else if (element.type === NodeType.project) {
             // Called from project node.
-            return Array.from(this._notesDB.getAllNotes()).filter(note => note.project === element.data).map(note => {
+            return Array.from(this._notesService.getAllNotes()).filter(note => note.project === element.data).map(note => {
                 return {
                     type: NodeType.note,
                     data: note,
@@ -64,10 +65,10 @@ export class NotesTreeDragAndDropController implements vscode.TreeDragAndDropCon
     public readonly dropMimeTypes = [this.mimeType];
     public readonly dragMimeTypes = [this.mimeType];
 
-    private readonly _notesDB: NotesDB;
+    private readonly _notesService: NoteService;
 
-    constructor(notesDB: NotesDB) {
-        this._notesDB = notesDB;
+    constructor(notesService: NoteService) {
+        this._notesService = notesService;
     }
 
     handleDrag?(source: readonly Node[], dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): void | Thenable<void> {
@@ -75,6 +76,7 @@ export class NotesTreeDragAndDropController implements vscode.TreeDragAndDropCon
         dataTransfer.set(this.mimeType, new vscode.DataTransferItem(source.filter(node => node.type === NodeType.note).map(node => (node.data as Note).uri.toString())));
     }
     handleDrop?(target: Node | undefined, dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): void | Thenable<void> {
+        // Handle dragged notes only
         let mimetypeData = dataTransfer.get(this.mimeType);
 
         if (!mimetypeData) {
@@ -83,14 +85,12 @@ export class NotesTreeDragAndDropController implements vscode.TreeDragAndDropCon
         }
 
         const sourceNoteUrisStr = mimetypeData.value as String[];
-        const sourceNotes = Array.from(this._notesDB.getAllNotes()).filter(note => sourceNoteUrisStr.includes(note.uri.toString()));
+        const sourceNotes = this._notesService.getAllNotes().filter(note => sourceNoteUrisStr.includes(note.uri.toString()));
 
         // Find the target project
-        let project: Project;
+        let project: Project | undefined = undefined;
 
-        if (!target) {
-            project = Project.unknownProject;
-        } else {
+        if (target) {
             if (target.type === NodeType.project) {
                 project = target.data as Project;
             } else if (target.type === NodeType.note) {
@@ -99,19 +99,24 @@ export class NotesTreeDragAndDropController implements vscode.TreeDragAndDropCon
             }
         }
 
-        // Update database
+        // Update service
         sourceNotes.forEach(sourceNote => {
-            sourceNote.project = project;
-            this._notesDB.saveNote(sourceNote);
+            // Also physically move it if there is a project
 
+            if (project) {
+                const newFilePath = vscode.Uri.joinPath(project.uri, getFileName(sourceNote.uri));
+                vscode.workspace.fs.rename(sourceNote.uri, newFilePath);
+                sourceNote.uri = newFilePath;
+            }
+
+            sourceNote.project = project;
         });
 
-        this._notesDB.persistDB();
     }
 
 }
 
-enum NodeType {
+export enum NodeType {
     project,
     note
 }
@@ -129,9 +134,9 @@ class ProjectItem extends vscode.TreeItem {
             vscode.TreeItemCollapsibleState.Expanded,
         );
 
-        this.resourceUri = project.getUri();
+        this.resourceUri = project.uri;
         this.contextValue = "project";
-        this.description = project.projectID;
+        this.description = getFileName(project.uri);
         this.iconPath = new vscode.ThemeIcon("file-directory");
     }
 }

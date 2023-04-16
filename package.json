@@ -35,7 +35,7 @@
       },
       {
         "command": "noteOrganizer.scanFolderForNotes",
-        "title": "Scan folder for note to import",
+        "title": "Scan folder for notes and projects to import",
         "category": "Note Organizer",
         "shortTitle": "Scan folder",
         "icon": "$(new-folder)"
@@ -47,7 +47,7 @@
         "icon": "$(remove)"
       },
       {
-        "command": "noteOrganizer.editProjectName",
+        "command": "noteOrganizer.renameProject",
         "title": "Edit project name",
         "category": "Note Organizer",
         "icon": "$(pencil)"
@@ -113,7 +113,7 @@
           "when": "view == noteOrganizer && viewItem == project"
         },
         {
-          "command": "noteOrganizer.editProjectName",
+          "command": "noteOrganizer.renameProject",
           "group": "inline@2",
           "when": "view == noteOrganizer && viewItem == project"
         },
@@ -144,7 +144,7 @@
           "when": "false"
         },
         {
-          "command": "noteOrganizer.editProjectName",
+          "command": "noteOrganizer.renameProject",
           "when": "false"
         },
         {

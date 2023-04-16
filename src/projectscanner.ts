@@ -16,9 +16,11 @@ export default class ProjectScanner {
     private readonly projectInnerFileRegex;
 
     private _paths: Iterable<vscode.Uri> = [];
+    private _existingProjects: Iterable<vscode.Uri> = [];
 
-    public constructor(paths?: Iterable<vscode.Uri>) {
-        this.paths = paths || [];
+    public constructor(paths?: Iterable<vscode.Uri>, existingProjects?: Iterable<vscode.Uri>) {
+        this._paths = paths || [];
+        this._existingProjects = existingProjects || [];
 
         this.projectInnerFileRegex = new RegExp(vscode.workspace.getConfiguration("noteOrganizer").get('projectInnerFileRegex', "^.vscode$"), "is");
     }
@@ -29,6 +31,14 @@ export default class ProjectScanner {
 
     public get paths() {
         return this._paths;
+    }
+
+    public get existingProjects(): Iterable<vscode.Uri> {
+        return this._existingProjects;
+    }
+
+    public set existingProjects(value: Iterable<vscode.Uri>) {
+        this._existingProjects = value;
     }
 
     /**
@@ -46,6 +56,11 @@ export default class ProjectScanner {
         const findForPath = async (fileOrFolderPath: vscode.Uri): Promise<vscode.Uri | null> => {
             if (token?.isCancellationRequested) {
                 return null;
+            }
+
+            // If path is an existing project, use it
+            if (Array.from(this._existingProjects).map(uri => uri.toString()).includes(fileOrFolderPath.toString())) {
+                return fileOrFolderPath;
             }
 
             try {
