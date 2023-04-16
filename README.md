@@ -34,6 +34,4 @@ See https://github.com/jacquemard/vscode-note-organizer/issues for issues and bu
 
 ## Release Notes
 
-### 0.0.1
-
-Initial pre-release
+See the [Changelog](./CHANGELOG.md) for more info on the releases.
