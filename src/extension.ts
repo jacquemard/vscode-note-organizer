@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 
-import NotesDB from './notesdb';
-import { importNoteToProject, clearDatabase, createNewProject, removeNote, deleteProject, renameProject, openNoteDialog, scanFolderAndSaveNotes, tryImportTextDocument, deleteNoteFromDisk, renameNote } from './interaction';
+import { importNoteToProject, clearDatabase, createNewProject, removeNote, removeProject, renameProject, openNoteDialog, scanFolderAndSaveNotes, tryImportTextDocument, deleteNoteFromDisk, renameNote, newNoteToProject } from './interaction';
 import { NotesTreeDataProvider, NotesTreeDragAndDropController } from './treedata';
 import { Logging } from './logging';
 import { Database } from './db';
@@ -13,6 +12,8 @@ export function activate(context: vscode.ExtensionContext) {
 	const notesDB = Database.getInstance(context.globalState);
 	notesDB.load();
 	const notesService = NoteService.getInstance(notesDB);
+
+	// TODO: vscode.workspace.createFileSystemWatcher
 
 	Logging.log('Note Organizer is active.');
 
@@ -32,8 +33,8 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.createProject', async () => {
 		createNewProject(context);
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.deleteProject', async (node) => {
-		deleteProject(node, context);
+	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.removeProject', async (node) => {
+		removeProject(node, context);
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.renameProject', async (node) => {
 		renameProject(node, context);
@@ -50,6 +51,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.importNoteToProject', async (node) => {
 		importNoteToProject(node, context);
 	}));
+	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.newNoteToProject', async (node) => {
+		newNoteToProject(node, context);
+	}));
+
 
 	// Document opended
 	vscode.workspace.onDidOpenTextDocument((textDocument) => {

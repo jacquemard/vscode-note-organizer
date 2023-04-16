@@ -41,7 +41,7 @@
         "icon": "$(new-folder)"
       },
       {
-        "command": "noteOrganizer.deleteProject",
+        "command": "noteOrganizer.removeProject",
         "title": "Remove project",
         "category": "Note Organizer",
         "icon": "$(remove)"
@@ -75,6 +75,12 @@
         "title": "Import existing note",
         "category": "Note Organizer",
         "icon": "$(go-to-file)"
+      },
+      {
+        "command": "noteOrganizer.newNoteToProject",
+        "title": "Create new note",
+        "category": "Note Organizer",
+        "icon": "$(new-file)"
       }
     ],
     "views": {
@@ -108,13 +114,13 @@
       ],
       "view/item/context": [
         {
-          "command": "noteOrganizer.deleteProject",
-          "group": "inline@3",
+          "command": "noteOrganizer.removeProject",
+          "group": "inline@4",
           "when": "view == noteOrganizer && viewItem == project"
         },
         {
           "command": "noteOrganizer.renameProject",
-          "group": "inline@2",
+          "group": "inline@3",
           "when": "view == noteOrganizer && viewItem == project"
         },
         {
@@ -134,13 +140,18 @@
         },
         {
           "command": "noteOrganizer.importNoteToProject",
+          "group": "inline@2",
+          "when": "view == noteOrganizer && viewItem == project"
+        },
+        {
+          "command": "noteOrganizer.newNoteToProject",
           "group": "inline@1",
           "when": "view == noteOrganizer && viewItem == project"
         }
       ],
       "commandPalette": [
         {
-          "command": "noteOrganizer.deleteProject",
+          "command": "noteOrganizer.removeProject",
           "when": "false"
         },
         {

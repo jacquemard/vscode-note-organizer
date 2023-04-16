@@ -50,7 +50,7 @@ async function selectProjectDialog(context: vscode.ExtensionContext) {
         return selected.project;
     }
 
-    return null;
+    return undefined;
 }
 
 
@@ -65,7 +65,7 @@ export async function openNoteDialog(context: vscode.ExtensionContext) {
 
 
 export function openNote(note: Note) {
-    vscode.window.showTextDocument(note.uri);
+    return vscode.window.showTextDocument(note.uri);
 }
 
 
@@ -219,7 +219,7 @@ export async function createNewProject(context: vscode.ExtensionContext) {
     scanUrisAndSaveNotes([newProj.uri], context);
 }
 
-export async function deleteProject(node: Node, context: vscode.ExtensionContext) {
+export async function removeProject(node: Node, context: vscode.ExtensionContext) {
     if (!(node.data instanceof Project)) {
         return;
     }
@@ -256,6 +256,7 @@ export async function renameProject(node: Node, context: vscode.ExtensionContext
     const newName = await vscode.window.showInputBox({
         title: `New project name for ${node.data.getDisplayName()}`,
         value: node.data.getDisplayName(),
+        prompt: "This will have no impact on the hardrive, the name will only be updated in the local database."
     });
 
     if (!newName) {
@@ -288,7 +289,7 @@ export async function deleteNoteFromDisk(node: Node, context: vscode.ExtensionCo
 
     if (selected && selected.value === "confirmed") {
         removeNote(node, context);
-        vscode.workspace.fs.delete(node.data.uri);
+        await vscode.workspace.fs.delete(node.data.uri);
     }
 
 }
@@ -314,10 +315,14 @@ export async function renameNote(node: Node, context: vscode.ExtensionContext) {
         const newUri = vscode.Uri.joinPath(parentPath, newName);
 
         // Rename on disk
-        vscode.workspace.fs.rename(node.data.uri, newUri);
+        try {
+            await vscode.workspace.fs.rename(node.data.uri, newUri);
 
-        // Rename on DB
-        node.data.uri = newUri;
+            // Rename on DB
+            node.data.uri = newUri;
+        } catch (error) {
+            vscode.window.showWarningMessage(`Error while renaming note: ${error}`);
+        }
     }
 
 }
@@ -346,6 +351,60 @@ export async function importNoteToProject(node: Node | undefined, context: vscod
     const existingUris = Array.from(noteService.getAllNotes()).map(note => note.uri.toString());
 
     noteFiles.filter(file => !existingUris.includes(file.toString())).forEach(notefile => noteService.newNote(notefile, project));
+}
+
+
+export async function newNoteToProject(node: Node | undefined, context: vscode.ExtensionContext) {
+    // Find project if not known
+    let project: Project | undefined;
+
+    if (!node || node.type !== NodeType.project) {
+        project = await selectProjectDialog(context);
+    } else {
+        project = node.data as Project;
+    }
+
+    if (!project) {
+        return;
+    }
+
+    // Ask note name
+    let noteName = await vscode.window.showInputBox({
+        title: "Note name",
+        placeHolder: "My new note",
+    });
+
+    if (!noteName) {
+        return;
+    }
+
+    const noteService = getNoteService(context);
+
+    // Create the note if not on disk already
+    const newFilePath = vscode.Uri.joinPath(project.uri, noteName);
+    try {
+        const fileStat = await vscode.workspace.fs.stat(newFilePath);
+
+        if (fileStat.type === vscode.FileType.File) {
+            // Already existing files, add it as the note does not already exists
+            let existingNote = noteService.getAllNotes().find(note => note.uri.toString() === newFilePath.toString());
+
+            if (!existingNote) {
+                existingNote = noteService.newNote(newFilePath, project);
+            }
+
+            await openNote(existingNote);
+
+        }
+    } catch (error) {
+        // File does not exists, create it
+        await vscode.workspace.fs.writeFile(newFilePath, new Uint8Array());
+
+        // Add it to the database
+        const note = noteService.newNote(newFilePath, project);
+
+        await openNote(note);
+    }
 }
 
 export async function tryImportTextDocument(textDocument: vscode.TextDocument, context: vscode.ExtensionContext) {
