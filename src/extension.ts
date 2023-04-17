@@ -13,23 +13,18 @@ export function activate(context: vscode.ExtensionContext) {
 	notesDB.load();
 	const notesService = NoteService.getInstance(notesDB);
 
-	// TODO: vscode.workspace.createFileSystemWatcher
-
 	Logging.log('Note Organizer is active.');
 
 	// Commands
 	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.scanFolderForNotes', async () => {
 		await scanFolderAndSaveNotes(context);
 	}));
-
 	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.openNote', async () => {
 		openNoteDialog(context);
 	}));
-
 	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.clearDatabase', async () => {
 		clearDatabase(context);
 	}));
-
 	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.createProject', async () => {
 		createNewProject(context);
 	}));
@@ -55,15 +50,12 @@ export function activate(context: vscode.ExtensionContext) {
 		newNoteToProject(node, context);
 	}));
 
-
 	// Document opended
 	vscode.workspace.onDidOpenTextDocument((textDocument) => {
 		tryImportTextDocument(textDocument, context);
 	});
 
 	// Treeview
-	// vscode.window.registerTreeDataProvider('noteOrganizer', new NotesTreeDataProvider(notesDB));
-
 	vscode.window.createTreeView('noteOrganizer', {
 		treeDataProvider: new NotesTreeDataProvider(notesService),
 		showCollapseAll: true,
