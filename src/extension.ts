@@ -1,16 +1,18 @@
 import * as vscode from 'vscode';
 
-import { importNoteToProject, clearDatabase, createNewProject, removeNote, removeProject, renameProject, openNoteDialog, scanFolderAndSaveNotes, tryImportTextDocument, deleteNoteFromDisk, renameNote, newNoteToProject, newNoteToWorkspace } from './interaction';
+import { importNoteToProject, clearDatabase, createNewProject, removeNote, removeProject, renameProject, openNoteDialog, scanFolderAndSaveNotes, tryImportTextDocument, deleteNoteFromDisk, renameNote, newNoteToProject, newNoteToWorkspace, openDraftFolder, quickNoteToDraft } from './interaction';
 import { NotesTreeDataProvider, NotesTreeDragAndDropController } from './treedata';
 import { Logging } from './logging';
 import { Database } from './db';
-import { NoteService } from './noteservice';
+import { NoteService } from './services/noteservice';
 
 
 export function activate(context: vscode.ExtensionContext) {
-	// Load the notes from the DB
+	// Initialize database
 	const notesDB = Database.getInstance(context.globalState);
 	notesDB.load();
+
+	// Initialize note service
 	const notesService = NoteService.getInstance(notesDB);
 
 	Logging.log('Note Organizer is active.');
@@ -52,6 +54,12 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.newNoteToWorkspace', async () => {
 		newNoteToWorkspace(context);
 	}));
+	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.openDraftFolder', async () => {
+		openDraftFolder(context);
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.quickNoteToDraft', async () => {
+		quickNoteToDraft(context);
+	}));
 
 	// Document opended
 	vscode.workspace.onDidOpenTextDocument((textDocument) => {
@@ -72,3 +80,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() { }
+function quickNoteToDraf(context: vscode.ExtensionContext) {
+	throw new Error('Function not implemented.');
+}
+

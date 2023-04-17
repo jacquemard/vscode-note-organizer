@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Database } from "./db";
+import { Database } from "../db";
 
 export default class IgnoreNoteService {
 

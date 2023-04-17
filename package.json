@@ -106,6 +106,17 @@
         "title": "Create new note to this workspace folder",
         "category": "Note Organizer",
         "icon": "$(new-file)"
+      },
+      {
+        "command": "noteOrganizer.openDraftFolder",
+        "title": "Open draft folder",
+        "category": "Note Organizer"
+      },
+      {
+        "command": "noteOrganizer.quickNoteToDraft",
+        "title": "Create new quick note",
+        "category": "Note Organizer",
+        "icon": "$(new-file)"
       }
     ],
     "views": {
@@ -129,11 +140,20 @@
           "when": "view == noteOrganizer"
         },
         {
+          "command": "noteOrganizer.quickNoteToDraft",
+          "group": "navigation",
+          "when": "view == noteOrganizer"
+        },
+        {
           "command": "noteOrganizer.openNote",
           "when": "view == noteOrganizer"
         },
         {
           "command": "noteOrganizer.scanFolderForNotes",
+          "when": "view == noteOrganizer"
+        },
+        {
+          "command": "noteOrganizer.openDraftFolder",
           "when": "view == noteOrganizer"
         }
       ],
@@ -206,33 +226,44 @@
             "description": "The regex used to filter file while scanning for notes. The filename should match the given regex to be considered a note file.",
             "type": "string",
             "default": "^(?!.*release).*note.*(\\.md|\\.txt)$",
-            "minLength": 1
+            "minLength": 1,
+            "scope": "machine"
           },
           "noteOrganizer.projectInnerFileRegex": {
             "title": "Project Inner File Regex",
             "markdownDescription": "The regex used to find out if a given folder should be considered as a project while scanning for notes. For a given folder `/a/b/`, `b` would be considered a project if any of its sub file and folder match this regex. By default, filter on `.vscode` files.",
             "type": "string",
             "default": "^.vscode$",
-            "minLength": 1
+            "minLength": 1,
+            "scope": "machine"
           },
           "noteOrganizer.folderScanRegex": {
             "title": "Folder scan regex",
             "markdownDescription": "The regex used to find out if a given folder should be scan while scanning for notes. For a given folder `/a/b/`, `b` would be scan only if `b` match this regex. By default, no filtering.",
             "type": "string",
             "default": "^.*$",
-            "minLength": 1
+            "minLength": 1,
+            "scope": "machine"
           },
           "noteOrganizer.maxRecursionDepth": {
             "title": "Folder scan max depth",
             "markdownDescription": "The maximum depth we should scan.",
             "type": "integer",
-            "default": 15
+            "default": 15,
+            "scope": "machine"
           },
           "noteOrganizer.scanConcurrency": {
             "title": "Scan max concurrency",
             "markdownDescription": "The maximum concurrency while scanning for notes.",
             "type": "integer",
-            "default": 20
+            "default": 20,
+            "scope": "machine"
+          },
+          "noteOrganizer.draftFolder": {
+            "title": "Draft folder",
+            "markdownDescription": "The folder where to save the quick note. Defaults to extension folder if empty.",
+            "type": "string",
+            "default": ""
           }
         }
       }

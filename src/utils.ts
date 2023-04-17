@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { Database } from "./db";
-import { NoteService } from "./noteservice";
-import IgnoreNoteService from "./ignoreNotesService";
+import { NoteService } from "./services/noteservice";
+import IgnoreNoteService from "./services/ignoreNotesService";
 
 export type ProgressDesc = [progress: vscode.Progress<{ message?: string; increment?: number }>, token: vscode.CancellationToken];
 export type NonCancelableProgressDesc = [progress: vscode.Progress<{ message?: string; increment?: number }>, token: null];

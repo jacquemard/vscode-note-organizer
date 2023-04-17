@@ -4,9 +4,12 @@ import ProjectScanner from "./projectscanner";
 import { Node, NodeType } from "./treedata";
 import { Logging } from "./logging";
 import { Database } from "./db";
-import { Note, NoteService, Project } from "./noteservice";
+import { Note, NoteService, Project } from "./services/noteservice";
 import { getFileName, getNoteService, getOrCreateProject, getIgnoreNoteService } from "./utils";
+import DraftFolderService from "./services/draftfolderservice";
+import IgnoreNoteService from "./services/ignoreNotesService";
 
+// Utils -----
 
 async function selectNoteDialog(context: vscode.ExtensionContext) {
     const noteService = getNoteService(context);
@@ -53,6 +56,37 @@ async function selectProjectDialog(context: vscode.ExtensionContext) {
     return undefined;
 }
 
+async function tryNewNoteAt(uri: vscode.Uri, project: Project | undefined, context: vscode.ExtensionContext) {
+    const noteService = getNoteService(context);
+    const ignoreNoteService = getIgnoreNoteService(context);
+
+    try {
+        const fileStat = await vscode.workspace.fs.stat(uri);
+
+        if (fileStat.type === vscode.FileType.File) {
+            // Already existing files, add it as the note does not already exists
+            let existingNote = noteService.getAllNotes().find(note => note.uri.toString() === uri.toString());
+
+            if (!existingNote) {
+                existingNote = noteService.newNote(uri, project);
+                ignoreNoteService.removeUriFromIgnoreNotes(uri);
+            }
+
+            await openNote(existingNote);
+        }
+    } catch (error) {
+        // File does not exists, create it
+        await vscode.workspace.fs.writeFile(uri, new Uint8Array());
+
+        // Add it to the database
+        const note = noteService.newNote(uri, project);
+        ignoreNoteService.removeUriFromIgnoreNotes(uri);
+
+        await openNote(note);
+    }
+}
+
+// --- Commands
 
 export async function openNoteDialog(context: vscode.ExtensionContext) {
     const selected = await selectNoteDialog(context);
@@ -396,37 +430,11 @@ export async function newNoteToProject(node: Node | undefined, context: vscode.E
         return;
     }
 
-    const noteService = getNoteService(context);
-    const ignoreNoteService = getIgnoreNoteService(context);
-
-    // Create the note if not on disk already
     const newFilePath = vscode.Uri.joinPath(project.uri, noteName);
-    try {
-        const fileStat = await vscode.workspace.fs.stat(newFilePath);
 
-        if (fileStat.type === vscode.FileType.File) {
-            // Already existing files, add it as the note does not already exists
-            let existingNote = noteService.getAllNotes().find(note => note.uri.toString() === newFilePath.toString());
-
-            if (!existingNote) {
-                existingNote = noteService.newNote(newFilePath, project);
-                ignoreNoteService.removeUriFromIgnoreNotes(newFilePath);
-            }
-
-            await openNote(existingNote);
-
-        }
-    } catch (error) {
-        // File does not exists, create it
-        await vscode.workspace.fs.writeFile(newFilePath, new Uint8Array());
-
-        // Add it to the database
-        const note = noteService.newNote(newFilePath, project);
-        ignoreNoteService.removeUriFromIgnoreNotes(newFilePath);
-
-        await openNote(note);
-    }
+    await tryNewNoteAt(newFilePath, project, context);
 }
+
 
 
 export async function newNoteToWorkspace(context: vscode.ExtensionContext) {
@@ -529,4 +537,32 @@ export async function tryImportTextDocument(textDocument: vscode.TextDocument, c
         const note = noteService.newNote(textDocument.uri, project);
 
     }
+}
+
+export async function openDraftFolder(context: vscode.ExtensionContext) {
+    const draftService = DraftFolderService.getInstance(context);
+
+    vscode.commands.executeCommand("vscode.openFolder", draftService.getDraftFolder(), {
+        forceNewWindow: true,
+    });
+}
+
+export async function quickNoteToDraft(context: vscode.ExtensionContext) {
+    // Ask note name
+    let noteName = await vscode.window.showInputBox({
+        title: "Note name",
+        placeHolder: "My new note",
+    });
+
+    if (!noteName) {
+        return;
+    }
+
+    const draftService = DraftFolderService.getInstance(context);
+
+    const newFilePath = vscode.Uri.joinPath(draftService.getDraftFolder(), noteName);
+
+    tryNewNoteAt(newFilePath, undefined, context);
+
+
 }

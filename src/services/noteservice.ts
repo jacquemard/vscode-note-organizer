@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import { Database, EntityManager, NoteEntity, ProjectEntity } from "./db";
-import { getFileName } from "./utils";
+import { Database, EntityManager, NoteEntity, ProjectEntity } from "../db";
+import { getFileName } from "../utils";
 
 // --- Models
 
