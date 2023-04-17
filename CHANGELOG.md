@@ -4,6 +4,6 @@ All notable changes to the "note-organizer" extension will be documented in this
 
 ## [Unreleased]
 
-## [0.0.1]
+## [0.1.0]
 
 Initial release
