@@ -409,10 +409,11 @@ export async function newNoteToProject(node: Node | undefined, context: vscode.E
 
 export async function tryImportTextDocument(textDocument: vscode.TextDocument, context: vscode.ExtensionContext) {
     const noteScanner = new NoteScanner();
-    const noteService = getNoteService(context);
-    const projectScanner = new ProjectScanner([textDocument.uri], noteService.getAllProjects().map(proj => proj.uri));
 
     if (noteScanner.isUriANote(textDocument.uri)) {
+        const noteService = getNoteService(context);
+        const projectScanner = new ProjectScanner([textDocument.uri], noteService.getAllProjects().map(proj => proj.uri));
+
         const projectDescs = await projectScanner.searchProjects();
         const projectPath = projectDescs[0].projectPath;
         const existingNoteUris = noteService.getAllNotes().map(note => note.uri.toString());
@@ -424,11 +425,11 @@ export async function tryImportTextDocument(textDocument: vscode.TextDocument, c
         let project: Project | undefined = undefined;
 
         if (projectPath) {
-            project = noteService.getAllProjects().find(proj => proj.uri.toString() === textDocument.uri.toString());
+            project = noteService.getAllProjects().find(proj => proj.uri.toString() === projectPath.toString());
 
             if (!project) {
                 // Create the project if non existant
-                project = noteService.newProject(textDocument.uri, getFileName(textDocument.uri));
+                project = noteService.newProject(textDocument.uri, getFileName(projectPath));
             }
         }
 
