@@ -230,7 +230,7 @@ export async function removeProject(node: Node, context: vscode.ExtensionContext
     const ignoreNoteService = getIgnoreNoteService(context);
 
     // Check if project is empty
-    if (Array.from(noteService.getAllProjects()).filter(proj => proj === node.data).length > 0) {
+    if (noteService.getAllNotes().filter(note => note.project === node.data).length > 0) {
         const selected = await vscode.window.showWarningMessage("This project contains some notes, which will be removed from the database, but not from the hardrive. Are you sure you want to continue?", {
             title: "Yes",
             value: "confirmed",
