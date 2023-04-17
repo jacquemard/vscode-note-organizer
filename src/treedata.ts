@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { NoteService, Project, Note } from './noteservice';
+import { NoteService, Project, Note } from './services/noteservice';
 import { getFileName } from './utils';
 
 
