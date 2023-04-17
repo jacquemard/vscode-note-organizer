@@ -3,7 +3,7 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode';
-import RemovedNoteService from '../../removedNotesService';
+import IgnoreNoteService from '../../ignoreNotesService';
 import { Database } from '../../db';
 
 
@@ -18,29 +18,29 @@ suite('Removed Note Service Test Suite', () => {
     });
 
     test("Adding removed notes should work", () => {
-        const service = RemovedNoteService.getInstance(Database.getInstance(extensionContext.globalState));
+        const service = IgnoreNoteService.getInstance(Database.getInstance(extensionContext.globalState));
 
-        service.clearRemovedNotes();
+        service.clearIgnoreNotes();
 
         // Test add
-        service.addUriToRemovedNotes(vscode.Uri.file("c:/test.md"));
-        service.addUriToRemovedNotes(vscode.Uri.file("c:/test2.md"));
+        service.addUriToIgnoreNotes(vscode.Uri.file("c:/test.md"));
+        service.addUriToIgnoreNotes(vscode.Uri.file("c:/test2.md"));
         assert.equal(service.isNoteUriRemoved(vscode.Uri.file("C:/test.md")), true);
         assert.equal(service.isNoteUriRemoved(vscode.Uri.file("C:/test2.md")), true);
-        assert.equal(service.getAllRemovedNotesUris().length, 2);
-        assert.equal(service.getAllRemovedNotesUris()[0].toString(), vscode.Uri.file("C:/test.md").toString());
-        assert.equal(service.getAllRemovedNotesUris()[1].toString(), vscode.Uri.file("C:/test2.md").toString());
+        assert.equal(service.getAllIgnoreNotesUris().length, 2);
+        assert.equal(service.getAllIgnoreNotesUris()[0].toString(), vscode.Uri.file("C:/test.md").toString());
+        assert.equal(service.getAllIgnoreNotesUris()[1].toString(), vscode.Uri.file("C:/test2.md").toString());
 
         // Test remove
-        service.removeUriFromRemovedNotes(vscode.Uri.file("c:/test.md"));
+        service.removeUriFromIgnoreNotes(vscode.Uri.file("c:/test.md"));
         assert.equal(service.isNoteUriRemoved(vscode.Uri.file("C:/test.md")), false);
-        assert.equal(service.getAllRemovedNotesUris().length, 1);
+        assert.equal(service.getAllIgnoreNotesUris().length, 1);
 
         // Test clear
-        service.addUriToRemovedNotes(vscode.Uri.file("c:/test.md"));
-        service.clearRemovedNotes();
+        service.addUriToIgnoreNotes(vscode.Uri.file("c:/test.md"));
+        service.clearIgnoreNotes();
         assert.equal(service.isNoteUriRemoved(vscode.Uri.file("C:/test.md")), false);
-        assert.equal(service.getAllRemovedNotesUris().length, 0);
+        assert.equal(service.getAllIgnoreNotesUris().length, 0);
 
     });
 

@@ -3,7 +3,7 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode';
-import { Database, NoteEntity, ProjectEntity, RemovedNotesEntity } from '../../db';
+import { Database, NoteEntity, ProjectEntity, IgnoreNotesEntity } from '../../db';
 
 
 suite('DB Test Suite', () => {
@@ -118,7 +118,7 @@ suite('DB Test Suite', () => {
         const notesDB = Database.getInstance(extensionContext.globalState);
         notesDB.clear();
 
-        const removedNotes: RemovedNotesEntity[] = [{
+        const ignoreNotes: IgnoreNotesEntity[] = [{
             id: 1,
             uri: vscode.Uri.file("c:/test.md"),
         }, {
@@ -127,19 +127,19 @@ suite('DB Test Suite', () => {
         }];
 
         // Load everything in the database
-        notesDB.removedNotes.addOrUpdateAll(removedNotes);
+        notesDB.ignoreNotes.addOrUpdateAll(ignoreNotes);
 
         // Should have been persisted, lets load from storage to test that
         notesDB.load();
 
-        assert.equal(notesDB.removedNotes.getAll().length, 2);
+        assert.equal(notesDB.ignoreNotes.getAll().length, 2);
 
         // Let ensure everything's right
-        assert.equal(notesDB.removedNotes.getAll()[0].id, 1);
-        assert.equal(notesDB.removedNotes.getAll()[0].uri.path, "/c:/test.md");
+        assert.equal(notesDB.ignoreNotes.getAll()[0].id, 1);
+        assert.equal(notesDB.ignoreNotes.getAll()[0].uri.path, "/c:/test.md");
 
-        assert.equal(notesDB.removedNotes.getAll()[1].id, 2);
-        assert.equal(notesDB.removedNotes.getAll()[1].uri.path, "/c:/test2.md");
+        assert.equal(notesDB.ignoreNotes.getAll()[1].id, 2);
+        assert.equal(notesDB.ignoreNotes.getAll()[1].uri.path, "/c:/test2.md");
 
 
     });

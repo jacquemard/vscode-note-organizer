@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { Database } from "./db";
 import { NoteService } from "./noteservice";
-import RemovedNoteService from "./removedNotesService";
+import IgnoreNoteService from "./ignoreNotesService";
 
 export type ProgressDesc = [progress: vscode.Progress<{ message?: string; increment?: number }>, token: vscode.CancellationToken];
 export type NonCancelableProgressDesc = [progress: vscode.Progress<{ message?: string; increment?: number }>, token: null];
@@ -13,9 +13,9 @@ export function getNoteService(context: vscode.ExtensionContext) {
     return noteService;
 }
 
-export function getRemovedNoteService(context: vscode.ExtensionContext) {
+export function getIgnoreNoteService(context: vscode.ExtensionContext) {
     const notesDB = Database.getInstance(context.globalState);
-    const service = RemovedNoteService.getInstance(notesDB);
+    const service = IgnoreNoteService.getInstance(notesDB);
 
     return service;
 }
