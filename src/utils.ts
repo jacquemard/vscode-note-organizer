@@ -18,3 +18,15 @@ export function getFileName(uri: vscode.Uri) {
 
     return fileName;
 }
+
+export function getOrCreateProject(uri: vscode.Uri, context: vscode.ExtensionContext) {
+    const noteService = getNoteService(context);
+    let project = noteService.getAllProjects().find(proj => proj.uri.toString() === uri.toString());
+
+    if (!project) {
+        // Create the project if non existant
+        project = noteService.newProject(uri, getFileName(uri));
+    }
+
+    return project;
+}
