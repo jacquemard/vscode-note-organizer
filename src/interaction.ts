@@ -5,7 +5,7 @@ import { Node, NodeType } from "./treedata";
 import { Logging } from "./logging";
 import { Database } from "./db";
 import { Note, NoteService, Project } from "./noteservice";
-import { getFileName, getNoteService } from "./utils";
+import { getFileName, getNoteService, getOrCreateProject } from "./utils";
 
 
 async function selectNoteDialog(context: vscode.ExtensionContext) {
@@ -407,6 +407,79 @@ export async function newNoteToProject(node: Node | undefined, context: vscode.E
     }
 }
 
+
+export async function newNoteToWorkspace(context: vscode.ExtensionContext) {
+    const folders = vscode.workspace.workspaceFolders;
+
+    let pickedFolder;
+    if (!folders || folders.length === 0) {
+        await vscode.window.showWarningMessage("No workspace opened, cannot create a note");
+        return;
+    } else if (folders.length > 1) {
+        const quickPicks = folders.map(folder => {
+            return {
+                label: folder.name,
+                detail: folder.uri.fsPath,
+                workspace: folder
+            };
+        });
+
+        const selected = await vscode.window.showQuickPick(quickPicks, {
+            title: "Pick a workspace",
+        });
+
+        if (!selected) {
+            return;
+        }
+        pickedFolder = selected.workspace;
+
+    } else {
+        pickedFolder = folders[0];
+    }
+
+    // Ask note name
+    let noteName = await vscode.window.showInputBox({
+        title: "Note name",
+        placeHolder: "My new note",
+    });
+
+    if (!noteName) {
+        return;
+    }
+
+    // Get the project
+    const project = getOrCreateProject(pickedFolder.uri, context);
+
+    const noteService = getNoteService(context);
+
+    // Create the note if not on disk already
+    const newFilePath = vscode.Uri.joinPath(project.uri, noteName);
+    try {
+        const fileStat = await vscode.workspace.fs.stat(newFilePath);
+
+        if (fileStat.type === vscode.FileType.File) {
+            // Already existing files, add it as the note does not already exists
+            let existingNote = noteService.getAllNotes().find(note => note.uri.toString() === newFilePath.toString());
+
+            if (!existingNote) {
+                existingNote = noteService.newNote(newFilePath, project);
+            }
+
+            await openNote(existingNote);
+
+        }
+    } catch (error) {
+        // File does not exists, create it
+        await vscode.workspace.fs.writeFile(newFilePath, new Uint8Array());
+
+        // Add it to the database
+        const note = noteService.newNote(newFilePath, project);
+
+        await openNote(note);
+    }
+}
+
+
 export async function tryImportTextDocument(textDocument: vscode.TextDocument, context: vscode.ExtensionContext) {
     const noteScanner = new NoteScanner();
 
@@ -425,12 +498,7 @@ export async function tryImportTextDocument(textDocument: vscode.TextDocument, c
         let project: Project | undefined = undefined;
 
         if (projectPath) {
-            project = noteService.getAllProjects().find(proj => proj.uri.toString() === projectPath.toString());
-
-            if (!project) {
-                // Create the project if non existant
-                project = noteService.newProject(textDocument.uri, getFileName(projectPath));
-            }
+            project = getOrCreateProject(projectPath, context);
         }
 
         const note = noteService.newNote(textDocument.uri, project);
