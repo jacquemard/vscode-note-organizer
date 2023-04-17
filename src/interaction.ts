@@ -5,7 +5,7 @@ import { Node, NodeType } from "./treedata";
 import { Logging } from "./logging";
 import { Database } from "./db";
 import { Note, NoteService, Project } from "./noteservice";
-import { getFileName, getNoteService, getOrCreateProject } from "./utils";
+import { getFileName, getNoteService, getOrCreateProject, getIgnoreNoteService } from "./utils";
 
 
 async function selectNoteDialog(context: vscode.ExtensionContext) {
@@ -127,6 +127,7 @@ export async function scanUrisAndSaveNotes(uris: Array<vscode.Uri>, context: vsc
         }
     });
 
+    const ignoreNoteService = getIgnoreNoteService(context);
     // Create notes in the DB (not replacing existing ones)
     allNoteFiles.forEach(uri => {
         // Check if URI exists
@@ -134,6 +135,7 @@ export async function scanUrisAndSaveNotes(uris: Array<vscode.Uri>, context: vsc
 
         if (!existingNote) {
             noteService.newNote(uri);
+            ignoreNoteService.removeUriFromIgnoreNotes(uri);
         }
     });
 
@@ -225,9 +227,10 @@ export async function removeProject(node: Node, context: vscode.ExtensionContext
     }
 
     const noteService = getNoteService(context);
+    const ignoreNoteService = getIgnoreNoteService(context);
 
     // Check if project is empty
-    if (Array.from(noteService.getAllProjects()).filter(proj => proj === node.data).length > 0) {
+    if (noteService.getAllNotes().filter(note => note.project === node.data).length > 0) {
         const selected = await vscode.window.showWarningMessage("This project contains some notes, which will be removed from the database, but not from the hardrive. Are you sure you want to continue?", {
             title: "Yes",
             value: "confirmed",
@@ -241,7 +244,10 @@ export async function removeProject(node: Node, context: vscode.ExtensionContext
     }
 
     // Delete the linked notes
-    Array.from(noteService.getAllNotes()).filter(note => note.project === node.data).forEach(note => noteService.removeNote(note));
+    Array.from(noteService.getAllNotes()).filter(note => note.project === node.data).forEach(note => {
+        noteService.removeNote(note);
+        ignoreNoteService.addUriToIgnoreNotes(note.uri);
+    });
 
     // Delete project
     noteService.removeProject(node.data);
@@ -272,7 +278,10 @@ export async function removeNote(node: Node, context: vscode.ExtensionContext) {
     }
 
     const noteService = getNoteService(context);
+    const ignoreNoteService = getIgnoreNoteService(context);
+
     noteService.removeNote(node.data);
+    ignoreNoteService.addUriToIgnoreNotes(node.data.uri);
 }
 
 export async function deleteNoteFromDisk(node: Node, context: vscode.ExtensionContext) {
@@ -318,8 +327,13 @@ export async function renameNote(node: Node, context: vscode.ExtensionContext) {
         try {
             await vscode.workspace.fs.rename(node.data.uri, newUri);
 
-            // Rename on DB
+            // Rename on DB and update removed notes
+            const ignoreNoteService = getIgnoreNoteService(context);
+            ignoreNoteService.removeUriFromIgnoreNotes(newUri);
+            ignoreNoteService.removeUriFromIgnoreNotes(node.data.uri);
+
             node.data.uri = newUri;
+
         } catch (error) {
             vscode.window.showWarningMessage(`Error while renaming note: ${error}`);
         }
@@ -348,9 +362,13 @@ export async function importNoteToProject(node: Node | undefined, context: vscod
 
     // Import only those which does not already exists
     const noteService = getNoteService(context);
+    const ignoreNoteService = getIgnoreNoteService(context);
     const existingUris = Array.from(noteService.getAllNotes()).map(note => note.uri.toString());
 
-    noteFiles.filter(file => !existingUris.includes(file.toString())).forEach(notefile => noteService.newNote(notefile, project));
+    noteFiles.filter(file => !existingUris.includes(file.toString())).forEach(notefile => {
+        noteService.newNote(notefile, project);
+        ignoreNoteService.removeUriFromIgnoreNotes(notefile);
+    });
 }
 
 
@@ -379,6 +397,7 @@ export async function newNoteToProject(node: Node | undefined, context: vscode.E
     }
 
     const noteService = getNoteService(context);
+    const ignoreNoteService = getIgnoreNoteService(context);
 
     // Create the note if not on disk already
     const newFilePath = vscode.Uri.joinPath(project.uri, noteName);
@@ -391,6 +410,7 @@ export async function newNoteToProject(node: Node | undefined, context: vscode.E
 
             if (!existingNote) {
                 existingNote = noteService.newNote(newFilePath, project);
+                ignoreNoteService.removeUriFromIgnoreNotes(newFilePath);
             }
 
             await openNote(existingNote);
@@ -402,6 +422,7 @@ export async function newNoteToProject(node: Node | undefined, context: vscode.E
 
         // Add it to the database
         const note = noteService.newNote(newFilePath, project);
+        ignoreNoteService.removeUriFromIgnoreNotes(newFilePath);
 
         await openNote(note);
     }
@@ -451,6 +472,7 @@ export async function newNoteToWorkspace(context: vscode.ExtensionContext) {
     const project = getOrCreateProject(pickedFolder.uri, context);
 
     const noteService = getNoteService(context);
+    const ignoreNoteService = getIgnoreNoteService(context);
 
     // Create the note if not on disk already
     const newFilePath = vscode.Uri.joinPath(project.uri, noteName);
@@ -463,6 +485,7 @@ export async function newNoteToWorkspace(context: vscode.ExtensionContext) {
 
             if (!existingNote) {
                 existingNote = noteService.newNote(newFilePath, project);
+                ignoreNoteService.removeUriFromIgnoreNotes(newFilePath);
             }
 
             await openNote(existingNote);
@@ -474,7 +497,7 @@ export async function newNoteToWorkspace(context: vscode.ExtensionContext) {
 
         // Add it to the database
         const note = noteService.newNote(newFilePath, project);
-
+        ignoreNoteService.removeUriFromIgnoreNotes(newFilePath);
         await openNote(note);
     }
 }
@@ -482,8 +505,10 @@ export async function newNoteToWorkspace(context: vscode.ExtensionContext) {
 
 export async function tryImportTextDocument(textDocument: vscode.TextDocument, context: vscode.ExtensionContext) {
     const noteScanner = new NoteScanner();
+    const ignoreNoteService = getIgnoreNoteService(context);
 
-    if (noteScanner.isUriANote(textDocument.uri)) {
+    // Adds the note only if it is a note based on the filename and if it has not been removed
+    if (noteScanner.isUriANote(textDocument.uri) && !ignoreNoteService.isNoteUriRemoved(textDocument.uri)) {
         const noteService = getNoteService(context);
         const projectScanner = new ProjectScanner([textDocument.uri], noteService.getAllProjects().map(proj => proj.uri));
 
