@@ -2,7 +2,7 @@
   "name": "note-organizer",
   "displayName": "Note Organizer",
   "description": "Organize your Markdown and text file notes across all of your project, in a single place.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.77.0"
   },
