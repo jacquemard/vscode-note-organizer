@@ -20,6 +20,10 @@ export interface NoteEntity extends IDEntity {
     uri: vscode.Uri;
 }
 
+export interface RemovedNotesEntity extends IDEntity {
+    uri: vscode.Uri;
+}
+
 
 // Serializers
 type SerializedProject = {
@@ -68,7 +72,28 @@ class NoteEntitySerializer implements Serializer<NoteEntity, SerializedNote> {
     }
 }
 
-// Database
+type SerializedRemovedNote = {
+    id: number,
+    projectId?: number,
+    uri: string,
+};
+
+class RemovedNoteSerializer implements Serializer<RemovedNotesEntity, SerializedRemovedNote> {
+    serialize(object: RemovedNotesEntity): SerializedRemovedNote {
+        return {
+            id: object.id,
+            uri: object.uri.toString(),
+        };
+    }
+    deserialize(object: SerializedRemovedNote): RemovedNotesEntity {
+        return {
+            id: object.id,
+            uri: vscode.Uri.parse(object.uri),
+        };
+    }
+}
+
+// --- Database
 export class EntityManager<T extends IDEntity> {
     private _db: Set<T>;
     constructor(db: Set<T>) {
@@ -136,9 +161,11 @@ export class Database {
     // DBs
     private readonly _projectsDB = new Set<ProjectEntity>();
     private readonly _notesDB = new Set<NoteEntity>();
+    private readonly _removesNotesDB = new Set<RemovedNotesEntity>();
 
     private readonly _projectStorageKey = "projects";
     private readonly _notesStorageKey = "notes";
+    private readonly _removedNotesStorageKey = "removedNotes";
 
     private constructor(globalState: vscode.Memento) {
         this._globalState = globalState;
@@ -146,6 +173,7 @@ export class Database {
         // Subscribe to Entity managers for persistance
         this.projects.updated(() => this.persistProjects());
         this.notes.updated(() => this.persistNotes());
+        this.removedNotes.updated(() => this.persistRemovedNotes());
     }
 
     public static getInstance(globalState: vscode.Memento) {
@@ -159,6 +187,7 @@ export class Database {
     // DB managers
     public readonly projects = new EntityManager(this._projectsDB);
     public readonly notes = new EntityManager(this._notesDB);
+    public readonly removedNotes = new EntityManager(this._removesNotesDB);
 
     // Persistance
 
@@ -179,11 +208,20 @@ export class Database {
     }
 
     /**
+     * Persist the notes in globalState
+     */
+    public persistRemovedNotes() {
+        const removedNoteSerializer = new RemovedNoteSerializer();
+        this._globalState.update(this._removedNotesStorageKey, this.removedNotes.getAll().map(obj => removedNoteSerializer.serialize(obj)));
+    }
+
+    /**
      * Persist the full database in globalState
      */
     public persist() {
         this.persistProjects();
         this.persistNotes();
+        this.persistRemovedNotes();
     }
 
     /**
@@ -207,16 +245,28 @@ export class Database {
     }
 
     /**
+     * Load the removed notes from the globalState
+     */
+    public loadRemovedNotes() {
+        const serializer = new RemovedNoteSerializer();
+
+        this._removesNotesDB.clear();
+        this._globalState.get(this._removedNotesStorageKey, []).map(obj => serializer.deserialize(obj)).forEach(note => this._removesNotesDB.add(note));
+    }
+
+    /**
      * Load everything from the persistant globalState
      */
     public load() {
         this.loadProjects();
         this.loadNotes();
+        this.loadRemovedNotes();
     }
 
     public clear() {
         this.notes.clear();
         this.projects.clear();
+        this.removedNotes.clear();
     }
 
 }
