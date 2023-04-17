@@ -146,6 +146,12 @@ export class EntityManager<T extends IDEntity> {
         }
     };
 
+    public get nextId() {
+        // Find the last id
+        const lastIndex = this.getAll().map(obj => obj.id).sort((a, b) => b - a)[0] || 0;
+        return lastIndex + 1;
+    }
+
     // Events
     private _updatedEmitter: vscode.EventEmitter<undefined> = new vscode.EventEmitter<undefined>();
     public readonly updated: vscode.Event<undefined> = this._updatedEmitter.event;
