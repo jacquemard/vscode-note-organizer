@@ -15,12 +15,11 @@ interface FoundNote {
  */
 export default class NoteScanner {
 
-    private readonly noteFilenameRegex;
-    private readonly scanFolderRegex;
-    private readonly maxRecursionDepth;
-    private readonly maxConcurrency;
-    private readonly maxDepthForLogging = 3;
-    // private readonly recursionPLimit;
+    private _noteFilenameRegex;
+    private _scanFolderRegex;
+    private _maxRecursionDepth;
+    private _maxConcurrency;
+    private _maxDepthForLogging = 3;
 
     private _paths: Iterable<vscode.Uri> = [];
 
@@ -29,10 +28,10 @@ export default class NoteScanner {
 
         const conf = vscode.workspace.getConfiguration("noteOrganizer");
 
-        this.noteFilenameRegex = new RegExp(conf.get<string>('noteFileRegex', ".*"), "is");
-        this.scanFolderRegex = new RegExp(conf.get<string>('folderScanRegex', "^.*$"), "is");
-        this.maxRecursionDepth = conf.get<number>('maxRecursionDepth', 15);
-        this.maxConcurrency = conf.get<number>('scanConcurrency', 20);
+        this._noteFilenameRegex = new RegExp(conf.get<string>('noteFileRegex', ".*"), "is");
+        this._scanFolderRegex = new RegExp(conf.get<string>('folderScanRegex', "^.*$"), "is");
+        this._maxRecursionDepth = conf.get<number>('maxRecursionDepth', 15);
+        this._maxConcurrency = conf.get<number>('scanConcurrency', 20);
         // this.recursionPLimit = pLimit(this.maxConcurrency);
     }
 
@@ -59,7 +58,7 @@ export default class NoteScanner {
         let activeConcurrency = 0;
 
         const findInPath = async (filePath: vscode.Uri, depth: number): Promise<Array<vscode.Uri>> => {
-            if (depth > this.maxRecursionDepth || token?.isCancellationRequested) {
+            if (depth > this._maxRecursionDepth || token?.isCancellationRequested) {
                 return [];
             }
 
@@ -68,7 +67,7 @@ export default class NoteScanner {
                 const fileStat = await vscode.workspace.fs.stat(filePath);
 
                 if (fileStat.type === vscode.FileType.Directory) {
-                    if (depth <= this.maxDepthForLogging) {
+                    if (depth <= this._maxDepthForLogging) {
                         Logging.log(`Scanning folder ${filePath.fsPath}`);
                     }
 
@@ -77,10 +76,10 @@ export default class NoteScanner {
 
                     // Let's do it for sub folders synchronously when we are at the max concurrent job.
 
-                    const checkSubFiles = async  ([subFilePath, type]:[string, vscode.FileType]) => {
+                    const checkSubFiles = async ([subFilePath, type]: [string, vscode.FileType]) => {
                         const subPathUri = vscode.Uri.joinPath(filePath, subFilePath);
 
-                        if (type === vscode.FileType.Directory && !this.scanFolderRegex.test(subFilePath)) {  // Check if this sub folder should be checked
+                        if (type === vscode.FileType.Directory && !this._scanFolderRegex.test(subFilePath)) {  // Check if this sub folder should be checked
                             Logging.log(`Skipping ${subPathUri} folder as it did not match the regex`);
                             return [];
                         }
@@ -90,7 +89,7 @@ export default class NoteScanner {
                         fileList.push(...subFiles);
                     };
 
-                    if (activeConcurrency >= this.maxConcurrency) {
+                    if (activeConcurrency >= this._maxConcurrency) {
                         for (let [subFilePath, type] of dirFiles) {
                             await checkSubFiles([subFilePath, type]);
                         }
@@ -134,11 +133,45 @@ export default class NoteScanner {
     }
 
     public isFilenameANote(fileName: string): boolean {
-        return this.noteFilenameRegex.test(fileName);
+        return this._noteFilenameRegex.test(fileName);
     }
 
     public isUriANote(uri: vscode.Uri): boolean {
         const pathParts = uri.path.split('/');
         return this.isFilenameANote(pathParts[pathParts.length - 1]);
     }
+
+    // --- Getters
+    public get noteFilenameRegex() {
+        return this._noteFilenameRegex;
+    }
+    public get scanFolderRegex() {
+        return this._scanFolderRegex;
+    }
+    public get maxRecursionDepth() {
+        return this._maxRecursionDepth;
+    }
+    public get maxConcurrency() {
+        return this._maxConcurrency;
+    }
+    public get maxDepthForLogging() {
+        return this._maxDepthForLogging;
+    }
+
+    public set noteFilenameRegex(value) {
+        this._noteFilenameRegex = value;
+    }
+    public set scanFolderRegex(value) {
+        this._scanFolderRegex = value;
+    }
+    public set maxRecursionDepth(value) {
+        this._maxRecursionDepth = value;
+    }
+    public set maxConcurrency(value) {
+        this._maxConcurrency = value;
+    }
+    public set maxDepthForLogging(value) {
+        this._maxDepthForLogging = value;
+    }
+
 }
