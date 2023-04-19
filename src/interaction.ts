@@ -117,7 +117,7 @@ export async function scanFolderAndSaveNotes(context: vscode.ExtensionContext) {
     return await scanUrisAndSaveNotes(folders, context);
 }
 
-export async function scanUrisAndSaveNotes(uris: Array<vscode.Uri>, context: vscode.ExtensionContext) {
+export async function scanUrisAndSaveNotes(uris: Array<vscode.Uri>, context: vscode.ExtensionContext, importAllNotes = false) {
     if (uris.length <= 0) {
         Logging.log("No path to scan");
         return;
@@ -126,6 +126,9 @@ export async function scanUrisAndSaveNotes(uris: Array<vscode.Uri>, context: vsc
     Logging.log(`Scanning paths ${uris} for notes files.`);
 
     const noteFinder = new NoteScanner(uris);
+    if (importAllNotes) {
+        noteFinder.noteFilenameRegex = new RegExp("^.*(\.md|\.txt)$");
+    }
 
     // Scan for notes
     const fileDescs = await vscode.window.withProgress({
@@ -232,27 +235,32 @@ export async function createNewProject(context: vscode.ExtensionContext) {
     const noteService = getNoteService(context);
     const newProj = noteService.newProject(projectFolder[0]);
 
-    renameProject({
+    await renameProject({
         type: NodeType.project,
         data: newProj
     }, context);
 
     // Let ask if the user want to scan the project
 
-    const selected = await vscode.window.showInformationMessage(`Would you like to scan the folder ${getFileName(newProj.uri)} for note ?`, {}, {
-        title: "Yes",
-        confirmed: true,
+    const selected = await vscode.window.showInformationMessage(`Would you like to scan the folder ${getFileName(newProj.uri)} for note ?"
+        "You can either scan for those matching "${new NoteScanner().noteFilenameRegex}", or for all ".md" and ".txt" files`, {}, {
+        title: `Only matching notes`,
+        value: "matching_notes",
+    }, {
+        title: `All ".md" and ".txt" files`,
+        value: "all",
     }, {
         title: "No, thanks",
-        confirmed: false,
     });
 
-    if (!selected || !selected.confirmed) {
-        return;
+    if (selected?.value === "matching_notes") {
+        // Scan of the project
+        scanUrisAndSaveNotes([newProj.uri], context);
+    } else if (selected?.value === "all") {
+        // Import all of the project
+        scanUrisAndSaveNotes([newProj.uri], context, true);
     }
 
-    // Scan of the project
-    scanUrisAndSaveNotes([newProj.uri], context);
 }
 
 export async function removeProject(node: Node, context: vscode.ExtensionContext) {
