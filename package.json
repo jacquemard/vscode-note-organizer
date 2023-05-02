@@ -53,6 +53,12 @@
         "icon": "$(folder-opened)"
       },
       {
+        "command": "noteOrganizer.toggleShowEmptyProjects",
+        "title": "Toggle show empty projects",
+        "category": "Note Organizer",
+        "icon": "$(eye)"
+      },
+      {
         "command": "noteOrganizer.scanFolderForNotesAndProject",
         "title": "Scan folder for notes and projects to import",
         "category": "Note Organizer",
@@ -131,6 +137,11 @@
       "view/title": [
         {
           "command": "noteOrganizer.createProject",
+          "group": "navigation",
+          "when": "view == noteOrganizer"
+        },
+        {
+          "command": "noteOrganizer.toggleShowEmptyProjects",
           "group": "navigation",
           "when": "view == noteOrganizer"
         },

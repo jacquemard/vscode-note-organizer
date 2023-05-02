@@ -158,8 +158,6 @@ export async function scanUrisAndSaveNotesAndProjects(uris: Array<vscode.Uri>, c
         }
     });
 
-    // TODO: add the possiblity to hide empty project
-
     // Scan for project for all of the notes
     const projectFinder = new ProjectScanner(allNoteFiles, noteService.getAllProjects().map(proj => proj.uri));
 
@@ -217,7 +215,7 @@ export async function scanUrisAndSaveNotesAndProjects(uris: Array<vscode.Uri>, c
         }
     });
 
-    vscode.window.showInformationMessage(`Note scanning finished successfully. Found ${allProjectFiles.length} projects) and ${allNoteFiles.length} note files (in ${projectDescs.length} distinct project).`);
+    vscode.window.showInformationMessage(`Note scanning finished successfully. Found ${allProjectFiles.length} projects and ${allNoteFiles.length} note files (in ${Array.from(projectDescsUniqueByUri.keys()).length} distinct project).`);
 }
 
 

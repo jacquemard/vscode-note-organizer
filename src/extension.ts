@@ -67,11 +67,16 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	// Treeview
+	const treeView = new NotesTreeDataProvider(notesService, context);
 	vscode.window.createTreeView('noteOrganizer', {
-		treeDataProvider: new NotesTreeDataProvider(notesService),
+		treeDataProvider: treeView,
 		showCollapseAll: true,
 		dragAndDropController: new NotesTreeDragAndDropController(notesService)
 	});
+
+	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.toggleShowEmptyProjects', async () => {
+		treeView.toggleShowEmptyProject();
+	}));
 
 	// Set context as a global as some tests depend on it
 	(global as any).testExtensionContext = context;
