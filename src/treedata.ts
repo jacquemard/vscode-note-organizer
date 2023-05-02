@@ -5,13 +5,17 @@ import { getFileName } from './utils';
 
 export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
     private _notesService: NoteService;
+    private _context: vscode.ExtensionContext;
+
+    private readonly showEmptyProjectStorageKey = "showEmptyProjects";
 
     // Event
     private _onDidChangeTreeData: vscode.EventEmitter<any> = new vscode.EventEmitter<any>();
     readonly onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event;
 
-    constructor(notesService: NoteService) {
+    constructor(notesService: NoteService, context: vscode.ExtensionContext) {
         this._notesService = notesService;
+        this._context = context;
         notesService.onUpdated(() => this._onDidChangeTreeData.fire(undefined));
     }
 
@@ -28,12 +32,19 @@ export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
     getChildren(element?: Node | undefined): vscode.ProviderResult<Node[]> {
         if (!element) {
             // Called for the root element
-            const projects = Array.from(this._notesService.getAllProjects()).map(project => {
+            let projects = Array.from(this._notesService.getAllProjects()).map(project => {
                 return {
                     type: NodeType.project,
                     data: project
                 } as Node;
             });
+
+            if (!this.getShowEmptyProject()) {
+                // Filter out empty projects
+                projects = projects.filter(proj => {
+                    return this._notesService.getAllNotes().filter(note => note.project && note.project.id === proj.data.id).length > 0;
+                });
+            }
 
             // Also include unknown project notes
             const unknownProjectNotes = Array.from(this._notesService.getAllNotes()).filter(note => !note.project).map(note => {
@@ -58,6 +69,18 @@ export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
         return [];
     }
 
+    public getShowEmptyProject() {
+        return this._context.globalState.get(this.showEmptyProjectStorageKey, true);
+    }
+
+    public setShowEmptyProject(value: Boolean) {
+        this._context.globalState.update(this.showEmptyProjectStorageKey, value);
+        this._onDidChangeTreeData.fire(undefined);
+    }
+
+    public toggleShowEmptyProject() {
+        this.setShowEmptyProject(!this.getShowEmptyProject());
+    }
 }
 
 export class NotesTreeDragAndDropController implements vscode.TreeDragAndDropController<Node> {

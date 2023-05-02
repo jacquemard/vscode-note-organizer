@@ -1,13 +1,11 @@
 import * as vscode from "vscode";
-import NoteScanner from "./notescanner";
+import Scanner, { Finding, FindingType } from "./scanner";
 import ProjectScanner from "./projectscanner";
 import { Node, NodeType } from "./treedata";
 import { Logging } from "./logging";
-import { Database } from "./db";
-import { Note, NoteService, Project } from "./services/noteservice";
+import { Note, Project } from "./services/noteservice";
 import { getFileName, getNoteService, getOrCreateProject, getIgnoreNoteService } from "./utils";
 import DraftFolderService from "./services/draftfolderservice";
-import IgnoreNoteService from "./services/ignoreNotesService";
 
 // Utils -----
 
@@ -103,7 +101,7 @@ export function openNote(note: Note) {
 }
 
 
-export async function scanFolderAndSaveNotes(context: vscode.ExtensionContext) {
+export async function scanFolderAndSaveNotesAndProjects(context: vscode.ExtensionContext) {
     let folders = await vscode.window.showOpenDialog({
         canSelectFiles: false,
         canSelectFolders: true,
@@ -114,10 +112,10 @@ export async function scanFolderAndSaveNotes(context: vscode.ExtensionContext) {
 
     folders = folders || [];
 
-    return await scanUrisAndSaveNotes(folders, context);
+    return await scanUrisAndSaveNotesAndProjects(folders, context);
 }
 
-export async function scanUrisAndSaveNotes(uris: Array<vscode.Uri>, context: vscode.ExtensionContext, importAllNotes = false) {
+export async function scanUrisAndSaveNotesAndProjects(uris: Array<vscode.Uri>, context: vscode.ExtensionContext, importAllNotes = false, scanForProjects = true) {
     if (uris.length <= 0) {
         Logging.log("No path to scan");
         return;
@@ -125,21 +123,42 @@ export async function scanUrisAndSaveNotes(uris: Array<vscode.Uri>, context: vsc
 
     Logging.log(`Scanning paths ${uris} for notes files.`);
 
-    const noteFinder = new NoteScanner(uris);
+    const scanner = new Scanner();
     if (importAllNotes) {
-        noteFinder.noteFilenameRegex = new RegExp("^.*(\.md|\.txt)$");
+        scanner.noteFilenameRegex = new RegExp("^.*(\.md|\.txt)$");
     }
 
-    // Scan for notes
-    const fileDescs = await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Window,
-        cancellable: true,
-    }, async (progress, token) => await noteFinder.scanNotesDocs([progress, token]));
+    // Scan for notes and projects
+    const findings: Finding[] = [];
+    for (let uri of uris) {
+        const uriFindings = await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Window,
+            cancellable: true,
+        }, async (progress, token) => await scanner.scan(uri, [progress, token]));
 
-    const allNoteFiles = fileDescs.flatMap(fileDesc => fileDesc.noteFilesPaths);
+        findings.push(...uriFindings);
+    }
 
-    // Scan for project
+    const allNoteFiles = findings.filter(f => f.type === FindingType.note).map(f => f.path);
+    let allProjectFiles = findings.filter(f => f.type === FindingType.project).map(f => f.path);
+
+    if (!scanForProjects) {
+        allProjectFiles = [];
+    }
+
+    // Save all of the project
     const noteService = getNoteService(context);
+
+    allProjectFiles.forEach(projUri => {
+        // Check if URI exists
+        const existingProject = noteService.getAllProjects().find(proj => proj.uri.toString() === projUri.toString());
+
+        if (!existingProject) {
+            noteService.newProject(projUri, getFileName(projUri));
+        }
+    });
+
+    // Scan for project for all of the notes
     const projectFinder = new ProjectScanner(allNoteFiles, noteService.getAllProjects().map(proj => proj.uri));
 
     let projectDescs = await vscode.window.withProgress({
@@ -148,8 +167,6 @@ export async function scanUrisAndSaveNotes(uris: Array<vscode.Uri>, context: vsc
     }, async (progress, token) => await projectFinder.searchProjects([progress, token]));
 
     // Also consider existing project in projectDescs
-
-    // TODO: Maybe introduce a "parent project" feature, i.e. a project with a parent ?
 
     const projectDescsUniqueByUri = new Map(projectDescs.filter(item => item.projectPath).map(item => [item.projectPath.toString(), item]));
     const projectDescsUniqueByNoteUri = new Map(projectDescs.map(item => [item.rootPath.toString(), item]));
@@ -198,7 +215,7 @@ export async function scanUrisAndSaveNotes(uris: Array<vscode.Uri>, context: vsc
         }
     });
 
-    vscode.window.showInformationMessage(`Note scanning finished successfully. Found ${allNoteFiles.length} note files (${projectDescs.length} projects).`);
+    vscode.window.showInformationMessage(`Note scanning finished successfully. Found ${allProjectFiles.length} projects and ${allNoteFiles.length} note files (in ${Array.from(projectDescsUniqueByUri.keys()).length} distinct project).`);
 }
 
 
@@ -243,7 +260,7 @@ export async function createNewProject(context: vscode.ExtensionContext) {
     // Let ask if the user want to scan the project
 
     const selected = await vscode.window.showInformationMessage(`Would you like to scan the folder ${getFileName(newProj.uri)} for note ?"
-        "You can either scan for those matching "${new NoteScanner().noteFilenameRegex}", or for all ".md" and ".txt" files`, {}, {
+        "You can either scan for those matching "${new Scanner().noteFilenameRegex}", or for all ".md" and ".txt" files`, {}, {
         title: `Only matching notes`,
         value: "matching_notes",
     }, {
@@ -255,10 +272,10 @@ export async function createNewProject(context: vscode.ExtensionContext) {
 
     if (selected?.value === "matching_notes") {
         // Scan of the project
-        scanUrisAndSaveNotes([newProj.uri], context);
+        await scanUrisAndSaveNotesAndProjects([newProj.uri], context, undefined, false);
     } else if (selected?.value === "all") {
         // Import all of the project
-        scanUrisAndSaveNotes([newProj.uri], context, true);
+        await scanUrisAndSaveNotesAndProjects([newProj.uri], context, true, false);
     }
 
 }
@@ -520,7 +537,7 @@ export async function newNoteToWorkspace(context: vscode.ExtensionContext) {
 
 
 export async function tryImportTextDocument(textDocument: vscode.TextDocument, context: vscode.ExtensionContext) {
-    const noteScanner = new NoteScanner();
+    const noteScanner = new Scanner();
     const ignoreNoteService = getIgnoreNoteService(context);
 
     // Adds the note only if it is a note based on the filename and if it has not been removed

@@ -17,7 +17,6 @@ export default class DraftFolderService {
     }
 
     private constructor(context: vscode.ExtensionContext) {
-        context.globalStorageUri;
         this._context = context;
     }
 

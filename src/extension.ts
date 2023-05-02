@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { importNoteToProject, clearDatabase, createNewProject, removeNote, removeProject, renameProject, openNoteDialog, scanFolderAndSaveNotes, tryImportTextDocument, deleteNoteFromDisk, renameNote, newNoteToProject, newNoteToWorkspace, openDraftFolder, quickNoteToDraft } from './interaction';
+import { importNoteToProject, clearDatabase, createNewProject, removeNote, removeProject, renameProject, openNoteDialog, scanFolderAndSaveNotesAndProjects, tryImportTextDocument, deleteNoteFromDisk, renameNote, newNoteToProject, newNoteToWorkspace, openDraftFolder, quickNoteToDraft } from './interaction';
 import { NotesTreeDataProvider, NotesTreeDragAndDropController } from './treedata';
 import { Logging } from './logging';
 import { Database } from './db';
@@ -18,8 +18,8 @@ export function activate(context: vscode.ExtensionContext) {
 	Logging.log('Note Organizer is active.');
 
 	// Commands
-	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.scanFolderForNotes', async () => {
-		await scanFolderAndSaveNotes(context);
+	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.scanFolderForNotesAndProject', async () => {
+		await scanFolderAndSaveNotesAndProjects(context);
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.openNote', async () => {
 		openNoteDialog(context);
@@ -67,11 +67,16 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	// Treeview
+	const treeView = new NotesTreeDataProvider(notesService, context);
 	vscode.window.createTreeView('noteOrganizer', {
-		treeDataProvider: new NotesTreeDataProvider(notesService),
+		treeDataProvider: treeView,
 		showCollapseAll: true,
 		dragAndDropController: new NotesTreeDragAndDropController(notesService)
 	});
+
+	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.toggleShowEmptyProjects', async () => {
+		treeView.toggleShowEmptyProject();
+	}));
 
 	// Set context as a global as some tests depend on it
 	(global as any).testExtensionContext = context;

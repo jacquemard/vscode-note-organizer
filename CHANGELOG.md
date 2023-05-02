@@ -3,6 +3,8 @@
 All notable changes to the "note-organizer" extension will be documented in this file.
 
 ## [Unreleased]
+ - Project and note scanning: find all of the project instead of only those with notes.
+ - Toggle to hide and show empty project in tree data.
 
 ## [0.2.0]
 
