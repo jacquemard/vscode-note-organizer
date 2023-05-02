@@ -1,13 +1,17 @@
 # note-organizer README
 
-Quickly find your already existing Markdown and text file notes across all of your project. Easily organize and create new notes.
+This extension provides a way to quickly find your already existing Markdown and text file notes, doing so across all of your project. It let you easily organize and create new notes within your projects.
 
 
 ## Features
 
-Scan your computer and automatically find note files. It looks for `.txt` and `.md` files having `note` within their name (configurable with setting `noteOrganizer.noteFileRegex`). Automatically groups the found notes in distinct project based on `.vscode` project it can find.
+Scan your computer and automatically find note files. It looks for `.txt` and `.md` files having `note` within their name (configurable with setting `noteOrganizer.noteFileRegex`). Automatically groups the found notes in distinct project based on `.vscode` project it can find. Also finds all of your projects, even if there is no note within it, so you can quickly create new notes in these projects.
 
 ![Scanning](./resources/docimages/scanning.gif)
+
+Import new project, and scan them for text or markdown files.
+
+![Project import](./resources/docimages/projectimport.gif)
 
 Quickly open your existing note file.
 
@@ -35,7 +39,7 @@ This extension contributes the following settings:
 
 ## Known Issues
 
-See https://github.com/jacquemard/vscode-note-organizer/issues for issues and bug reports.
+See https://github.com/jacquemard/vscode-note-organizer/issues for issues and bug reports. Feature requests welcome!
 
 ## Release Notes
 
