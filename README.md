@@ -11,7 +11,7 @@ This extension provides a way to quickly find your already existing Markdown and
 
 It looks for `.txt` and `.md` files having `note` within their name (configurable with setting `noteOrganizer.noteFileRegex`). Automatically groups the found notes in distinct project based on `.vscode` project it can find. Also finds all of your projects, even if there is no note within it, so you can quickly create new notes in these projects.
 
-**Import new project, and scan them for text or markdown files**
+**Import new project, and scan them for all text or markdown files**
 
 ![Project import](./resources/docimages/projectimport.gif)
 
@@ -27,7 +27,13 @@ It looks for `.txt` and `.md` files having `note` within their name (configurabl
 
 ![Quick note](./resources/docimages/quicknote.gif)
 
-##
+## First setup
+
+You'll need to add your existing notes and projects to this extension. To do so, the automatic scan is recommended. Find the command "Note Organizer: Scan folder for notes and projects to import", choose the folder containing your projects, and it will start scanning this folder and all of its subfolders, finding all VSCode project and notes.
+
+If there is some projects or notes you'd want but the scanner didn't find them, you can add them manually in the Note Organizer, under the explorer view.
+
+If you use a generic "Note" folder containing all of your notes, you can add it as a project. When asked for scanning, choose "All .md and .txt files".
 
 ## Extension Settings
 

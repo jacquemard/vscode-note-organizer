@@ -259,8 +259,8 @@ export async function createNewProject(context: vscode.ExtensionContext) {
 
     // Let ask if the user want to scan the project
 
-    const selected = await vscode.window.showInformationMessage(`Would you like to scan the folder ${getFileName(newProj.uri)} for note ?"
-        "You can either scan for those matching "${new Scanner().noteFilenameRegex}", or for all ".md" and ".txt" files`, {}, {
+    const selected = await vscode.window.showInformationMessage(`Would you like to scan the folder ${getFileName(newProj.uri)} for note ?
+        You can either scan for those matching "${new Scanner().noteFilenameRegex}", or for all ".md" and ".txt" files`, {}, {
         title: `Only matching notes`,
         value: "matching_notes",
     }, {
