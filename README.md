@@ -1,30 +1,33 @@
-# note-organizer README
+# Note organizer
 
 This extension provides a way to quickly find your already existing Markdown and text file notes, doing so across all of your project. It let you easily organize and create new notes within your projects.
 
 
 ## Features
 
-Scan your computer and automatically find note files. It looks for `.txt` and `.md` files having `note` within their name (configurable with setting `noteOrganizer.noteFileRegex`). Automatically groups the found notes in distinct project based on `.vscode` project it can find. Also finds all of your projects, even if there is no note within it, so you can quickly create new notes in these projects.
+**Scan your computer and automatically find note files**
 
 ![Scanning](./resources/docimages/scanning.gif)
 
-Import new project, and scan them for text or markdown files.
+It looks for `.txt` and `.md` files having `note` within their name (configurable with setting `noteOrganizer.noteFileRegex`). Automatically groups the found notes in distinct project based on `.vscode` project it can find. Also finds all of your projects, even if there is no note within it, so you can quickly create new notes in these projects.
+
+**Import new project, and scan them for text or markdown files**
 
 ![Project import](./resources/docimages/projectimport.gif)
 
-Quickly open your existing note file.
+**Quickly open your existing note file.**
 
 ![Quick open](./resources/docimages/quickopen.gif)
 
-Move, rename, create or delete your notes easily.
+**Move, rename, create or delete your notes easily**
 
 ![Organize](./resources/docimages/organize.gif)
 
-Create new quick notes to the draft folder (Customizable with the `noteOrganizer.draftFolder` setting).
+**Create new quick notes to the draft folder** (Customizable with the `noteOrganizer.draftFolder` setting).
 
 ![Quick note](./resources/docimages/quicknote.gif)
 
+##
 
 ## Extension Settings
 
