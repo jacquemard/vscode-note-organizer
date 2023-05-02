@@ -2,7 +2,7 @@
   "name": "note-organizer",
   "displayName": "Note Organizer",
   "description": "Organize your Markdown and text file notes across all of your project, in a single place.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "engines": {
     "vscode": "^1.77.0"
   },
@@ -53,7 +53,7 @@
         "icon": "$(folder-opened)"
       },
       {
-        "command": "noteOrganizer.scanFolderForNotes",
+        "command": "noteOrganizer.scanFolderForNotesAndProject",
         "title": "Scan folder for notes and projects to import",
         "category": "Note Organizer",
         "shortTitle": "Scan folder",
@@ -149,7 +149,7 @@
           "when": "view == noteOrganizer"
         },
         {
-          "command": "noteOrganizer.scanFolderForNotes",
+          "command": "noteOrganizer.scanFolderForNotesAndProject",
           "when": "view == noteOrganizer"
         },
         {

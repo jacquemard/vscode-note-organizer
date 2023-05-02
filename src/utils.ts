@@ -27,6 +27,17 @@ export function getFileName(uri: vscode.Uri) {
     return fileName;
 }
 
+
+export function getParentUri(uri: vscode.Uri) {
+    const pathParts = uri.path.split('/');
+    const parentPath = pathParts.slice(0, pathParts.length - 1);
+
+    return uri.with({
+        path: parentPath.join("/")
+    });
+}
+
+
 export function getOrCreateProject(uri: vscode.Uri, context: vscode.ExtensionContext) {
     const noteService = getNoteService(context);
     let project = noteService.getAllProjects().find(proj => proj.uri.toString() === uri.toString());

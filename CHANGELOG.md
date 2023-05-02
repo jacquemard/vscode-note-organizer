@@ -3,6 +3,7 @@
 All notable changes to the "note-organizer" extension will be documented in this file.
 
 ## [Unreleased]
+ - Project and note scanning: find all of the project instead of only those with notes.
 
 ## [0.2.0]
 
