@@ -235,22 +235,28 @@ export async function clearDatabase(context: vscode.ExtensionContext) {
     }
 }
 
-export async function createNewProject(context: vscode.ExtensionContext) {
+export async function createNewProject(context: vscode.ExtensionContext, projectFolder?: vscode.Uri) {
     // Open folder
-    let projectFolder = await vscode.window.showOpenDialog({
-        canSelectFiles: false,
-        canSelectFolders: true,
-        canSelectMany: false,
-        openLabel: "Open",
-        title: "Select the project folder"
-    });
+    if (!projectFolder) {
+        let projectFolderValues = await vscode.window.showOpenDialog({
+            canSelectFiles: false,
+            canSelectFolders: true,
+            canSelectMany: false,
+            openLabel: "Open",
+            title: "Select the project folder"
+        });
+
+        if (projectFolderValues && projectFolderValues.length > 0) {
+            projectFolder = projectFolderValues[0];
+        }
+    }
 
     if (!projectFolder) {
         return;
     }
 
     const noteService = getNoteService(context);
-    const newProj = noteService.newProject(projectFolder[0]);
+    const newProj = noteService.newProject(projectFolder);
 
     await renameProject({
         type: NodeType.project,
