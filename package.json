@@ -133,6 +133,12 @@
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "noteOrganizer",
+        "contents": "No notes nor projects found. First, scan a folder for notes and projects to find, or import a new unique project. [Learn more](https://github.com/jacquemard/vscode-note-organizer#first-setup)\n[Scan a folder for notes and project](command:noteOrganizer.scanFolderForNotesAndProject)\n[Import a unique project](command:noteOrganizer.createProject)"
+      }
+    ],
     "menus": {
       "view/title": [
         {
