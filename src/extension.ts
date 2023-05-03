@@ -71,7 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
 	vscode.window.createTreeView('noteOrganizer', {
 		treeDataProvider: treeView,
 		showCollapseAll: true,
-		dragAndDropController: new NotesTreeDragAndDropController(notesService)
+		dragAndDropController: new NotesTreeDragAndDropController(notesService, context)
 	});
 
 	context.subscriptions.push(vscode.commands.registerCommand('noteOrganizer.toggleShowEmptyProjects', async () => {

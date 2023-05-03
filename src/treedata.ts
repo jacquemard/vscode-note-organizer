@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { NoteService, Project, Note } from './services/noteservice';
 import { getFileName } from './utils';
+import { createNewProject } from './interaction';
 
 
 export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
@@ -85,31 +86,53 @@ export class NotesTreeDataProvider implements vscode.TreeDataProvider<Node> {
 
 export class NotesTreeDragAndDropController implements vscode.TreeDragAndDropController<Node> {
     public readonly mimeType = "application/vnd.code.tree.noteOrganizer";
-    public readonly dropMimeTypes = [this.mimeType];
+    public readonly dropMimeTypes = [this.mimeType, "text/uri-list"];
     public readonly dragMimeTypes = [this.mimeType];
 
     private readonly _notesService: NoteService;
+    private readonly _context: vscode.ExtensionContext;
 
-    constructor(notesService: NoteService) {
+    constructor(notesService: NoteService, context: vscode.ExtensionContext) {
         this._notesService = notesService;
+        this._context = context;
     }
 
-    handleDrag?(source: readonly Node[], dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): void | Thenable<void> {
+    handleDrag(source: readonly Node[], dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): void | Thenable<void> {
         // Only note are draggable
         dataTransfer.set(this.mimeType, new vscode.DataTransferItem(source.filter(node => node.type === NodeType.note).map(node => (node.data as Note).uri.toString())));
     }
-    handleDrop?(target: Node | undefined, dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): void | Thenable<void> {
-        // Handle dragged notes only
-        let mimetypeData = dataTransfer.get(this.mimeType);
+    handleDrop(target: Node | undefined, dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken) {
+        this._handleDrop(target, dataTransfer, token);
+    }
 
-        if (!mimetypeData) {
+    async _handleDrop(target: Node | undefined, dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken) {
+        let fileUriMimeTypeData = dataTransfer.get("text/uri-list");
+        dataTransfer.forEach((item, mimeType) => {
+            console.log(item);
+            console.log(mimeType);
+        });
+
+        if (!fileUriMimeTypeData) {
             // Wrong mimetype
             return;
         }
 
-        const sourceNoteUrisStr = mimetypeData.value as String[];
-        const sourceNotes = this._notesService.getAllNotes().filter(note => sourceNoteUrisStr.includes(note.uri.toString()));
+        // Handle dragged file or folder (including notes from treeview)
 
+        // Split dragged by file for folder
+        const sourceFileUrisStr = (fileUriMimeTypeData.value as string).split(/(\s+)/).map(s => s.trim()).filter(Boolean);
+        const sourceFileUris = sourceFileUrisStr.map(str => vscode.Uri.parse(str));
+        const filesUri: vscode.Uri[] = [];
+        const folderUri: vscode.Uri[] = [];
+
+        for (const sourceFileUri of sourceFileUris) {
+            const stat = await vscode.workspace.fs.stat(sourceFileUri);
+            if (stat.type === vscode.FileType.Directory) {
+                folderUri.push(sourceFileUri);
+            } else if (stat.type === vscode.FileType.File) {
+                filesUri.push(sourceFileUri);
+            }
+        }
         // Find the target project
         let project: Project | undefined = undefined;
 
@@ -121,6 +144,17 @@ export class NotesTreeDragAndDropController implements vscode.TreeDragAndDropCon
                 project = note.project;
             }
         }
+
+        // Find existing notes or create one
+        const sourceNotes = filesUri.map(uri => {
+            let note = this._notesService.getAllNotes().find(note => note.uri.toString() === uri.toString());
+
+            if (!note) {
+                note = this._notesService.newNote(uri);
+            };
+
+            return note;
+        });
 
         // Update service
         sourceNotes.forEach(async sourceNote => {
@@ -138,7 +172,16 @@ export class NotesTreeDragAndDropController implements vscode.TreeDragAndDropCon
             } else {
                 sourceNote.project = project;
             }
+        });
 
+        // Handle folder drop
+        // Create new projects if not already exists
+        const folderProjects = folderUri.forEach(uri => {
+            let project = this._notesService.getAllProjects().find(project => project.uri.toString() === uri.toString());
+
+            if (!project) {
+                createNewProject(this._context, uri);
+            };
         });
 
     }

@@ -6,6 +6,8 @@ All notable changes to the "note-organizer" extension will be documented in this
 
 ### Added
  - Add a welcome info in Tree View
+ - Handle file and folder drop in Tree View
+
 ## [0.2.1]
 
 ### Added
